@@ -144,3 +144,5 @@ checklink/cookies.txt
 # data will be linked but this is likely to large
 data/
 *.nc
+
+scratch/
