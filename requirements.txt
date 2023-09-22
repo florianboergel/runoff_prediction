@@ -14,7 +14,6 @@ attrs==23.1.0
 Babel==2.12.1
 backcall==0.2.0
 backoff==2.2.1
--e git+https://git.io-warnemuende.de/phy_drcs/runoff_prediction.git@75376333ab9a89ea474345f22a17104103fbd4ba#egg=BalticRiverPrediction
 beautifulsoup4==4.12.2
 bleach==6.0.0
 blessed==1.20.0

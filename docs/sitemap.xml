@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://phy_drcs.github.io/BalticRiverPrediction/03_shared_utilities.html</loc>
+    <lastmod>2023-09-22T18:46:15.442Z</lastmod>
+  </url>
+  <url>
+    <loc>https://phy_drcs.github.io/BalticRiverPrediction/02_BaltNet.html</loc>
+    <lastmod>2023-09-22T18:46:15.818Z</lastmod>
+  </url>
+  <url>
+    <loc>https://phy_drcs.github.io/BalticRiverPrediction/convLSTM.html</loc>
+    <lastmod>2023-09-22T18:46:16.146Z</lastmod>
+  </url>
+  <url>
+    <loc>https://phy_drcs.github.io/BalticRiverPrediction/index.html</loc>
+    <lastmod>2023-09-22T18:46:16.471Z</lastmod>
+  </url>
+</urlset>

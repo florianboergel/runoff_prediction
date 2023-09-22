@@ -1,0 +1,313 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{agujournal2019}
+
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\setcounter{secnumdepth}{5}
+% Make \paragraph and \subparagraph free-standing
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newlength{\cslentryspacingunit} % times entry-spacing
+\setlength{\cslentryspacingunit}{\parskip}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+  \let\oldpar\par
+  \def\par{\hangindent=\cslhangindent\oldpar}
+  \fi
+  % set entry spacing
+  \setlength{\parskip}{#2\cslentryspacingunit}
+ }%
+ {}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+
+\usepackage{url} %this package should fix any errors with URLs in refs.
+\usepackage{lineno}
+\usepackage[inline]{trackchanges} %for better track changes. finalnew option will compile document with changes incorporated.
+\usepackage{soul}
+\linenumbers
+\makeatletter
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{tcolorbox}{}{\usepackage[many]{tcolorbox}}
+\makeatother
+\makeatletter
+\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
+\makeatother
+\makeatletter
+\makeatother
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Preparing your manuscript},
+  pdfauthor={Florian Börgel; Sven Karsten},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+\journalname{Geophysical Research Letters}
+
+\draftfalse
+
+\begin{document}
+\title{Preparing your manuscript}
+
+\authors{Florian Börgel\affil{1}, Sven Karsten\affil{1}}
+\affiliation{1}{Leibniz-Institute for Baltic Sea Research Warnemünde, }
+\correspondingauthor{Florian Börgel}{florian.boergel@io-warnemuende.de}
+
+
+\begin{abstract}
+The abstract (1) states the nature of the investigation and (2)
+summarizes the important conclusions. The abstract should be suitable
+for indexing. Your abstract should:
+
+\begin{itemize}
+\tightlist
+\item
+  Be set as a single paragraph.
+\item
+  Be less than 250 words for all journals except GRL, for which the
+  limit is 150 words.
+\item
+  Not include table or figure mentions.
+\item
+  Avoid reference citations unless dependent on or directly related to
+  another paper (e.g., companion, comment, reply, or commentary on
+  another paper(s)). AGU's Style Guide discusses formatting citations in
+  abstracts.
+\item
+  Define all abbreviations.
+\end{itemize}
+\end{abstract}
+
+\section*{Plain Language Summary}
+A Plain Language Summary (PLS) can be an incredibly effective science
+communication tool. By summarizing your paper in non-technical terms,
+you can explain your research and its relevance to a much broader
+audience. A PLS is required for submissions to AGU Advances, G-Cubed,
+GeoHealth, GRL, JAMES, JGR: Biogeosciences, JGR: Oceans, JGR: Planets,
+JGR: Solid Earth, JGR: Atmospheres, Space Weather, and Reviews of
+Geophysics, but optional for other journals. A PLS should be no longer
+than 200 words and should be free of jargon, acronyms, equations, and
+any technical information that would be unknown to people from outside
+your scientific discipline. Read our tips for creating an effective PLS.
+
+
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, boxrule=0pt, breakable, borderline west={3pt}{0pt}{shadecolor}, enhanced, frame hidden, sharp corners]}{\end{tcolorbox}}\fi
+
+\hypertarget{section-heading}{%
+\section{Section Heading}\label{section-heading}}
+
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum
+hendrerit facilisis velit sit amet malesuada. Phasellus ornare nibh
+augue, maximus sodales ex tristique vitae. Vivamus non sollicitudin
+orci, aliquam placerat metus. Maecenas volutpat orci felis, vel finibus
+urna consectetur sed. Integer in dui ac dui mollis imperdiet. Quisque
+sed dapibus nibh. Aenean non luctus leo. Phasellus luctus mauris id
+aliquet dictum. Aliquam fermentum semper massa, vel dignissim nibh
+dictum et. See Hubbard et al. (2021).
+
+Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
+fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
+Vivamus eget rutrum purus. Etiam et pretium justo. Donec et egestas sem.
+Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
+fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
+
+In luctus mauris vitae imperdiet luctus. Morbi volutpat ligula ut tortor
+fermentum, eu ornare felis luctus. Donec semper diam vitae mattis
+posuere. Suspendisse facilisis purus nisi, sit amet egestas ex tempor
+ut. Cras tortor nulla, euismod at fermentum vel, dictum vel justo.
+Aenean commodo interdum diam nec placerat. Nunc vestibulum felis at est
+tincidunt, at euismod dui vestibulum. Nulla venenatis tortor at auctor
+iaculis. Donec consectetur neque ut sagittis ornare. Nullam pharetra
+felis tempor suscipit efficitur. Curabitur nibh ex, euismod at congue
+hendrerit, egestas id mi. Duis porttitor neque in commodo elementum.
+Fusce vitae fermentum nisi, euismod viverra augue. Curabitur at mi
+pretium, accumsan purus nec, tempus turpis.
+
+Donec non semper dui, quis aliquet est. Quisque quis sapien at massa
+ultricies egestas. Duis consequat ultricies erat, a pulvinar nisl
+vestibulum id. Sed tristique turpis ligula, et tempor lectus iaculis at.
+Vivamus commodo sapien ac turpis vestibulum dapibus. Morbi tristique
+arcu metus, et laoreet nisi varius nec. Pellentesque habitant morbi
+tristique senectus et netus et malesuada fames ac turpis egestas. Fusce
+sit amet nisl at mauris suscipit aliquet. Nulla vitae dignissim urna.
+Suspendisse sit amet arcu vitae magna blandit mattis. Vivamus convallis
+efficitur pulvinar. Sed cursus elit nulla. Sed porta, arcu a euismod
+pretium, odio dui lacinia lacus, ac vulputate nulla augue eget ex.
+Nullam consequat ligula sit amet mattis aliquam. Nulla risus urna,
+ultrices vel ullamcorper id, ornare viverra nunc.
+
+Nunc in lobortis lacus. Duis maximus urna leo, varius sodales arcu
+interdum nec. Pellentesque imperdiet dolor in leo eleifend dapibus. Ut
+dapibus, lectus non viverra gravida, ipsum ex faucibus tellus, quis
+iaculis risus tellus eget augue. Nullam a viverra est. Cras velit nisi,
+interdum in lacus at, vehicula mattis elit. Curabitur eu viverra purus.
+Proin pellentesque, metus vitae congue convallis, lorem metus feugiat
+mi, sit amet auctor purus ligula bibendum ante. Nam id justo
+scelerisque, rhoncus lectus in, fermentum libero. Donec tincidunt
+egestas ex ac eleifend. Cras faucibus ipsum a nunc faucibus fermentum.
+Integer et maximus lacus. Nam dictum nibh id viverra convallis.
+
+\hypertarget{acknowledgments}{%
+\section{Acknowledgments}\label{acknowledgments}}
+
+Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
+fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
+Vivamus eget rutrum purus. Etiam et pretium justo. Donec et egestas sem.
+Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
+fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
+
+\hypertarget{open-research}{%
+\section{Open research}\label{open-research}}
+
+Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
+fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
+Vivamus eget rutrum purus. Etiam et pretium justo. Donec et egestas sem.
+Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
+fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
+
+\hypertarget{references}{%
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
+
+\hypertarget{refs}{}
+\begin{CSLReferences}{1}{0}
+\vspace{1em}
+
+\leavevmode\vadjust pre{\hypertarget{ref-Hubbard2021}{}}%
+Hubbard, B., Christoffersen, P., Doyle, S. H., Chudley, T. R.,
+Schoonman, C. M., Law, R., \& Bougamont, M. (2021). Borehole-based
+characterization of deep mixed-mode crevasses at a greenlandic outlet
+glacier. \emph{{AGU} Advances}, \emph{2}(2).
+\url{https://doi.org/10.1029/2020av000291}
+
+\end{CSLReferences}
+
+
+
+\end{document}
