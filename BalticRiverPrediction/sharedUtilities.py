@@ -12,12 +12,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# %% ../nbs/03_shared_utilities.ipynb 2
+# %% ../nbs/03_shared_utilities.ipynb 3
 def preprocess(ds):
     return ds.sel(time=str(ds.time[len(ds.time)//2].dt.year.data)).resample(time="1D").mean()
 
 
-# %% ../nbs/03_shared_utilities.ipynb 3
+# %% ../nbs/03_shared_utilities.ipynb 4
 def read_netcdfs(files, dim, transform_func, transform_calendar=None, cftime = True):
     """Reads multiples netcdfs files"""
     def process_one_path(path):
@@ -44,7 +44,7 @@ def read_netcdfs(files, dim, transform_func, transform_calendar=None, cftime = T
     combined = xr.concat(datasets, dim)
     return combined
 
-# %% ../nbs/03_shared_utilities.ipynb 4
+# %% ../nbs/03_shared_utilities.ipynb 5
 def transform_calendar(ds,
                        timedim="time",
                        calendarname="proleptic_gregorin"):
@@ -52,7 +52,7 @@ def transform_calendar(ds,
     ds[timedim].attrs['calendar'] = calendarname
     return ds
 
-# %% ../nbs/03_shared_utilities.ipynb 5
+# %% ../nbs/03_shared_utilities.ipynb 6
 def plot_loss_and_acc(
     log_dir, loss_ylim=(0.0, 0.9), acc_ylim=(0.7, 1.0), save_loss=None, save_acc=None
 ):
