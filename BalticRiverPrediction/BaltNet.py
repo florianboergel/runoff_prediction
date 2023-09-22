@@ -8,6 +8,7 @@ import torch
 import torch.nn as nn
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint
+import numpy as np
 
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.dataset import random_split
@@ -181,7 +182,12 @@ class AtmosphericDataset(Dataset):
         runoffDataSTD = runoffData.std("time")
 
         self.rainData = (rainDataMean, rainDataSTD)
-        self.runoffData = (runoffData, runoffData)
+        self.runoffData = (runoffDataMean, runoffDataSTD)
+
+        np.savetext(
+            "/silor/boergel/paper/runoff_prediction/data/runoffMeanStd.txt",
+            [runoffDataMean, runoffDataSTD]
+        )
 
         X = (rainData - rainData.mean())/rainData.std()
         y = (runoffData - runoffDataMean)/runoffDataSTD
