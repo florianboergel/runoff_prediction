@@ -3,7 +3,7 @@
 # %% auto 0
 __all__ = ['BaltNet', 'BaseLineModel', 'LightningModel', 'AtmosphericDataset', 'AtmosphereDataModule']
 
-# %% ../nbs/02_BaltNet.ipynb 1
+# %% ../nbs/02_BaltNet.ipynb 2
 import torch
 import torch.nn as nn
 import lightning as L
@@ -23,7 +23,7 @@ from tqdm import tqdm
 from .convLSTM import ConvLSTM
 from .sharedUtilities import read_netcdfs, preprocess, plot_loss_and_acc
 
-# %% ../nbs/02_BaltNet.ipynb 2
+# %% ../nbs/02_BaltNet.ipynb 3
 class BaltNet(nn.Module):
     def __init__(self, modelPar):
         super(BaltNet, self).__init__()
@@ -71,7 +71,7 @@ class BaltNet(nn.Module):
         return x
 
 
-# %% ../nbs/02_BaltNet.ipynb 3
+# %% ../nbs/02_BaltNet.ipynb 4
 class BaseLineModel(nn.Module):
     def __init__(self, modelPar):
         super(BaseLineModel, self).__init__()
@@ -93,7 +93,7 @@ class BaseLineModel(nn.Module):
         x = self.fc_layers(x).squeeze()
         return x
 
-# %% ../nbs/02_BaltNet.ipynb 4
+# %% ../nbs/02_BaltNet.ipynb 5
 class LightningModel(L.LightningModule):
     def __init__(self, model, learning_rate, cosine_t_max):
         super().__init__()
@@ -153,7 +153,7 @@ class LightningModel(L.LightningModule):
         return [opt], [sch]
 
 
-# %% ../nbs/02_BaltNet.ipynb 5
+# %% ../nbs/02_BaltNet.ipynb 6
 class AtmosphericDataset(Dataset):
     def __init__(self, datapath, transform=None):
 
@@ -183,8 +183,9 @@ class AtmosphericDataset(Dataset):
 
         self.rainData = (rainDataMean, rainDataSTD)
         self.runoffData = (runoffDataMean, runoffDataSTD)
+        self.timeRange = (str(rainData.time.min().data), str(rainData.time.max().data))
 
-        np.savetext(
+        np.savetxt(
             "/silor/boergel/paper/runoff_prediction/data/runoffMeanStd.txt",
             [runoffDataMean, runoffDataSTD]
         )
@@ -209,7 +210,7 @@ class AtmosphericDataset(Dataset):
         return self.y.shape[0]-30
 
 
-# %% ../nbs/02_BaltNet.ipynb 6
+# %% ../nbs/02_BaltNet.ipynb 7
 class AtmosphereDataModule(L.LightningDataModule):
     def __init__(self, datapath, batch_size=64, num_workers=8, add_first_dim=True):
         super().__init__()

@@ -58,7 +58,14 @@ if __name__ == "__main__":
 
     # save best model 
     callbacks = [
-        ModelCheckpoint(save_top_k=1, mode="max", monitor="val_mse", save_last=True)
+        ModelCheckpoint(
+            dirpath="/silor/boergel/paper/runoff_prediction/data/modelWeights/",
+            filename="BaltNetTopOne",
+            save_top_k=1,
+            mode="max",
+            monitor="val_mse",
+            save_last=True
+        )
     ]
 
     trainer = L.Trainer(
@@ -71,7 +78,6 @@ if __name__ == "__main__":
             name="BaltNet1"
         ),
         deterministic=True,
-        default_root_dir="/silor/boergel/paper/runoff_prediction/data/modelWeights/"
     )
 
     trainer.fit(model=LighningBaltNet, datamodule=dataLoader)
