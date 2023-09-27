@@ -31,6 +31,8 @@ if __name__ == "__main__":
     batch_size=64
     )
 
+    # Note that this set of parameters will be defined by runTuning.py
+
     modelParameters = {
     "input_dim":30, # timesteps
     "hidden_dim":1, # Channels -> right now only precipitation

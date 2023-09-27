@@ -57,8 +57,10 @@ class BaltNet(nn.Module):
 
         self.fc_layers = torch.nn.Sequential(
             torch.nn.Linear(self.linear_dim, 512),
+            torch.nn.BatchNorm1d(512),  
             torch.nn.ReLU(),
             torch.nn.Linear(512, 256),
+            torch.nn.BatchNorm1d(256),  
             torch.nn.ReLU(),
             torch.nn.Linear(256, 97)
             )
@@ -129,17 +131,15 @@ class LightningModel(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         loss, true_labes, predicted_labels = self._shared_step(batch)
+        mse = self.val_mse(predicted_labels, true_labes)
         self.log("val_loss", loss, sync_dist=True)
-        self.val_mse(predicted_labels, true_labes)
-        self.log(
-            "val_mse", self.val_mse, prog_bar=True, sync_dist=True
-        )
+        self.log("val_mse", mse, prog_bar=True, sync_dist=True)
     
     def test_step(self, batch, _):
         loss, true_labels, predicted_labels = self._shared_step(batch)
-        self.test_mse(predicted_labels, true_labels)
+        mse = self.test_mse(predicted_labels, true_labels)
         self.log("test_loss", loss, rank_zero_only=True)
-        self.log("test_mse", self.test_mse, sync_dist=True)
+        self.log("test_mse", mse, sync_dist=True)
         return loss
     
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
@@ -148,7 +148,7 @@ class LightningModel(pl.LightningModule):
 
     
     def configure_optimizers(self):
-        opt = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        opt = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
         sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=self.cosine_t_max)
 
         return [opt], [sch]
@@ -162,37 +162,39 @@ class AtmosphericDataset(Dataset):
         # Following the technical description of the river data (Germo et al.)
         # the original river data is limited to 1979 to 2011
 
-        # runoffData = runoff.sel(time=slice(str(1979), str(2011)))
-        runoffData = runoff.transpose("time", "river")
-        runoffDataMean = runoff.mean()
-        runoffDataSTD = runoff.std()
+        start_year, end_year = 1979, 2011
+        self.timeRange = slice(str(start_year), str(end_year))
+        self.input_size = input_size
 
-        rainData = data["RAIN"].sel(time=slice(str(1979), str(2011)))
+        runoffData = runoff.transpose("time", "river")
+        runoffDataMean = runoffData.mean()
+        runoffDataSTD = runoffData.std()
+
+        rainData = data["RAIN"].sel(time=self.timeRange)
         rainDataMean = rainData.mean()
         rainDataSTD = rainData.std()
 
         self.rainData = (rainDataMean, rainDataSTD)
         self.runoffData = (runoffDataMean, runoffDataSTD)
-        self.timeRange = (slice(str(1979), str(2011)))
-        self.input_size = input_size
 
         np.savetxt(
             "/silor/boergel/paper/runoff_prediction/data/runoffMeanStd.txt",
             [runoffDataMean, runoffDataSTD]
         )
 
-        X = (rainData - rainData.mean())/rainData.std()
+        X = (rainData - rainDataMean)/rainDataSTD
         y = (runoffData - runoffDataMean)/runoffDataSTD
 
         # TODO 
         # add dummy dimension in only one atmospheric data file
         # is loaded
         
-        X = torch.tensor(X.compute().data, dtype=torch.float32)
-        X = X.unsqueeze(dim=0)
-        
+        X = ((rainData - rainDataMean) / rainDataSTD).compute()
+        y = ((runoffData - runoffDataMean) / runoffDataSTD).compute()
+
+        X = torch.tensor(X.data, dtype=torch.float32).unsqueeze(dim=0)
         self.x = X
-        self.y = torch.tensor(y.compute().data, dtype=torch.float32)
+        self.y = torch.tensor(y.data, dtype=torch.float32)
 
     def __getitem__(self, index):
         return self.x[:, index:index+(self.input_size)], self.y[index+int(self.input_size)]

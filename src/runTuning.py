@@ -12,7 +12,7 @@ from ray import tune
 import ray.train.lightning
 from ray.train import RunConfig, ScalingConfig, CheckpointConfig
 from ray.train.torch import TorchTrainer
-from ray.tune.schedulers import ASHAScheduler
+from ray.tune.schedulers import FIFOScheduler
 
 
 def train_func(config):
@@ -50,18 +50,18 @@ def train_func(config):
     trainer = ray.train.lightning.prepare_trainer(trainer)
     trainer.fit(model=LighningBaltNet, datamodule=dataLoader)
 
-def tune_BaltNet_asha(ray_trainer, config, num_samples=1):
-    scheduler = ASHAScheduler(max_t=50, grace_period=1, reduction_factor=2)
+def tune_BaltNet_FIFO(ray_trainer, config, num_samples=1):
+    scheduler = FIFOScheduler()
 
     tuner = tune.Tuner(
         ray_trainer,
         param_space={"train_loop_config": config},
         tune_config=tune.TuneConfig(
             metric="val_mse",
-            mode="max",
+            mode="min",
             num_samples=num_samples,
             scheduler=scheduler,
-            max_concurrent_trials=4
+            max_concurrent_trials=2
         ),
     )
     return tuner.fit()
@@ -84,7 +84,9 @@ if __name__ == "__main__":
         transform_func= lambda ds:ds.sel(time=slice(str(1979), str(2011))).roflux.resample(time="1D").mean(),
         cftime=False
         )  
-    ray.init()
+    
+    #TODO: May be not needed to call ray.init()
+    ray.init(num_gpus=2)
 
     modelParameters = {
     "input_dim": tune.choice([32,64,128]), # timesteps
@@ -97,36 +99,30 @@ if __name__ == "__main__":
     "dimensions": (191, 206) # dimensions of atmospheric forcing
     }
 
+    # Scaling config provides the resource allocated for the trainer
     scaling_config = ScalingConfig(
         num_workers=1,
         use_gpu=True,
         resources_per_worker={"GPU":1, "CPU":8}
         )
 
+    # Runtime configuration for training and tuning runs
     run_config = RunConfig(
     checkpoint_config=CheckpointConfig(
         num_to_keep=2,
         checkpoint_score_attribute="val_mse",
         checkpoint_score_order="min",
         ),
+        local_dir="/silor/boergel/paper/runoff_prediction/data/",
         storage_path="/silor/boergel/paper/runoff_prediction/data/modelWeights/",
         name="TestHyperParameterSpace"
     )
 
+    # Trainer configuration
     ray_trainer = TorchTrainer(
     train_func,
     scaling_config=scaling_config,
     run_config=run_config,
     )
 
-    scheduler = ASHAScheduler(max_t=50, grace_period=1, reduction_factor=2)
-    results = tune_BaltNet_asha(ray_trainer, modelParameters, num_samples=27)
-    # analysis = tune.run(
-    # train_func,
-    # config=modelParameters,
-    # num_samples=1,  # Number of times to sample from the search space
-    # resources_per_trial={"cpu": 8, "gpu": 1},
-    # metric="loss",  # The metric you want to optimize
-    # mode="min",  # "min" means you want to minimize the metric
-    # max_concurrent_trials = 1
-    # )
+    results = tune_BaltNet_FIFO(ray_trainer, modelParameters, num_samples=27)
