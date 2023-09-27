@@ -34,7 +34,7 @@ if __name__ == "__main__":
     modelParameters = {
     "input_dim":30, # timesteps
     "hidden_dim":1, # Channels -> right now only precipitation
-    "kernel_size":(3,3), # applied for spatial convolutions
+    "kernel_size":(4,4), # applied for spatial convolutions
     "num_layers":2, # number of convLSTM layers
     "batch_first":True, # first index is batch
     "bias":True, 

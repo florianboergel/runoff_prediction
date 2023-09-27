@@ -7,6 +7,7 @@ __all__ = ['BaltNet', 'BaseLineModel', 'LightningModel', 'AtmosphericDataset', '
 import torch
 import torch.nn as nn
 import lightning as L
+import pytorch_lightning as pl
 from lightning.pytorch.callbacks import ModelCheckpoint
 import numpy as np
 
@@ -94,7 +95,7 @@ class BaseLineModel(nn.Module):
         return x
 
 # %% ../nbs/02_BaltNet.ipynb 5
-class LightningModel(L.LightningModule):
+class LightningModel(pl.LightningModule):
     def __init__(self, model, learning_rate, cosine_t_max):
         super().__init__()
 
@@ -155,35 +156,25 @@ class LightningModel(L.LightningModule):
 
 # %% ../nbs/02_BaltNet.ipynb 6
 class AtmosphericDataset(Dataset):
-    def __init__(self, datapath, transform=None):
+    def __init__(self, input_size, data, runoff, transform=None):
 
-        data = read_netcdfs(
-            files=f"{datapath}/atmosphericForcing/????/rain.mom.dta.nc",
-            dim="time",
-            transform_func=lambda ds:preprocess(ds)
-            )       
 
-        runoff = read_netcdfs(
-            f"{datapath}/runoffData/combined_fastriver_*.nc",
-            dim="river",
-            transform_func= lambda ds:ds.roflux.resample(time="1D").mean(),
-            cftime=False
-            )
-        
-        runoff = runoff.transpose("time", "river")
-        runoff = runoff.sel(time=slice(None, str(2017)))
+        # Following the technical description of the river data (Germo et al.)
+        # the original river data is limited to 1979 to 2011
 
-        rainData = data["RAIN"]
-        runoffData = runoff.sel(time=slice(str(rainData.time.min().data), str(rainData.time.max().data)))
+        # runoffData = runoff.sel(time=slice(str(1979), str(2011)))
+        runoffData = runoff.transpose("time", "river")
+        runoffDataMean = runoff.mean()
+        runoffDataSTD = runoff.std()
 
+        rainData = data["RAIN"].sel(time=slice(str(1979), str(2011)))
         rainDataMean = rainData.mean()
         rainDataSTD = rainData.std()
-        runoffDataMean = runoffData.mean("time")
-        runoffDataSTD = runoffData.std("time")
 
         self.rainData = (rainDataMean, rainDataSTD)
         self.runoffData = (runoffDataMean, runoffDataSTD)
-        self.timeRange = (str(rainData.time.min().data), str(rainData.time.max().data))
+        self.timeRange = (slice(str(1979), str(2011)))
+        self.input_size = input_size
 
         np.savetxt(
             "/silor/boergel/paper/runoff_prediction/data/runoffMeanStd.txt",
@@ -204,24 +195,26 @@ class AtmosphericDataset(Dataset):
         self.y = torch.tensor(y.compute().data, dtype=torch.float32)
 
     def __getitem__(self, index):
-        return self.x[:, index:index+30], self.y[index+30]
+        return self.x[:, index:index+(self.input_size)], self.y[index+int(self.input_size)]
 
     def __len__(self):
-        return self.y.shape[0]-30
+        return self.y.shape[0]-(self.input_size)
 
 
 # %% ../nbs/02_BaltNet.ipynb 7
-class AtmosphereDataModule(L.LightningDataModule):
-    def __init__(self, datapath, batch_size=64, num_workers=8, add_first_dim=True):
+class AtmosphereDataModule(pl.LightningDataModule):
+    def __init__(self, data, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
         super().__init__()
-        self.data_dir = datapath
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.add_first_dim = add_first_dim
-        
+        self.input_size = input_size
+        self.data = data
+        self.runoff = runoff
+
     def setup(self, stage:str):
         UserWarning("Loading atmospheric data ...")
-        dataset = AtmosphericDataset(datapath=self.data_dir)
+        dataset = AtmosphericDataset(data=self.data, runoff=self.runoff, input_size=self.input_size)
         n_samples = len(dataset)
         train_size = int(0.8 * n_samples)
         val_size = int(0.1 * n_samples)
