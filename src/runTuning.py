@@ -22,7 +22,7 @@ def train_func(config):
     dataLoader = AtmosphereDataModule(
     data=data,
     runoff=runoff,
-    batch_size=64,
+    batch_size=16,
     input_size=config["input_dim"]
     )
 
@@ -89,10 +89,10 @@ if __name__ == "__main__":
     ray.init(num_gpus=2)
 
     modelParameters = {
-    "input_dim": tune.choice([32,64,128]), # timesteps
+    "input_dim": tune.choice([16,32]), # timesteps
     "hidden_dim":1, # Channels -> right now only precipitation
-    "kernel_size": tune.choice([(3,3),(5,5),(7,7)]), # applied for spatial convolutions, only uneven numbers
-    "num_layers": tune.choice([2,3,4]), # number of convLSTM layers
+    "kernel_size": tune.choice([(5,5),(7,7)]), # applied for spatial convolutions, only uneven numbers
+    "num_layers": tune.choice([3,4,7]), # number of convLSTM layers
     "batch_first":True, # first index is batch
     "bias":True, 
     "return_all_layers": False, 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     scaling_config = ScalingConfig(
         num_workers=1,
         use_gpu=True,
-        resources_per_worker={"GPU":1, "CPU":8}
+        resources_per_worker={"GPU":1, "CPU":16}
         )
 
     # Runtime configuration for training and tuning runs
@@ -125,4 +125,4 @@ if __name__ == "__main__":
     run_config=run_config,
     )
 
-    results = tune_BaltNet_FIFO(ray_trainer, modelParameters, num_samples=27)
+    results = tune_BaltNet_FIFO(ray_trainer, modelParameters, num_samples=8)

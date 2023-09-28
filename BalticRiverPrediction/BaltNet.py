@@ -57,10 +57,8 @@ class BaltNet(nn.Module):
 
         self.fc_layers = torch.nn.Sequential(
             torch.nn.Linear(self.linear_dim, 512),
-            torch.nn.BatchNorm1d(512),  
             torch.nn.ReLU(),
             torch.nn.Linear(512, 256),
-            torch.nn.BatchNorm1d(256),  
             torch.nn.ReLU(),
             torch.nn.Linear(256, 97)
             )
@@ -148,7 +146,7 @@ class LightningModel(pl.LightningModule):
 
     
     def configure_optimizers(self):
-        opt = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
+        opt = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=self.cosine_t_max)
 
         return [opt], [sch]
@@ -207,13 +205,14 @@ class AtmosphericDataset(Dataset):
 class AtmosphereDataModule(pl.LightningDataModule):
     def __init__(self, data, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
         super().__init__()
+
+        self.data = data
+        self.runoff = runoff
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.add_first_dim = add_first_dim
         self.input_size = input_size
-        self.data = data
-        self.runoff = runoff
-
+    
     def setup(self, stage:str):
         UserWarning("Loading atmospheric data ...")
         dataset = AtmosphericDataset(data=self.data, runoff=self.runoff, input_size=self.input_size)
