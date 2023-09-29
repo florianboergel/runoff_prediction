@@ -95,7 +95,7 @@ class BaseLineModel(nn.Module):
         return x
 
 # %% ../nbs/02_BaltNet.ipynb 5
-class LightningModel(pl.LightningModule):
+class LightningModel(L.LightningModule):
     def __init__(self, model, learning_rate, cosine_t_max):
         super().__init__()
 
@@ -165,12 +165,12 @@ class AtmosphericDataset(Dataset):
         self.input_size = input_size
 
         runoffData = runoff.transpose("time", "river")
-        runoffDataMean = runoffData.mean()
-        runoffDataSTD = runoffData.std()
+        runoffDataMean = runoffData.mean("time")
+        runoffDataSTD = runoffData.std("time")
 
         rainData = data["RAIN"].sel(time=self.timeRange)
-        rainDataMean = rainData.mean()
-        rainDataSTD = rainData.std()
+        rainDataMean = rainData.mean("time")
+        rainDataSTD = rainData.std("time")
 
         self.rainData = (rainDataMean, rainDataSTD)
         self.runoffData = (runoffDataMean, runoffDataSTD)
@@ -202,7 +202,7 @@ class AtmosphericDataset(Dataset):
 
 
 # %% ../nbs/02_BaltNet.ipynb 7
-class AtmosphereDataModule(pl.LightningDataModule):
+class AtmosphereDataModule(L.LightningDataModule):
     def __init__(self, data, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
         super().__init__()
 

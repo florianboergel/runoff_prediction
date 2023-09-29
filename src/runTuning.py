@@ -14,7 +14,8 @@ from ray.train import RunConfig, ScalingConfig, CheckpointConfig
 from ray.train.torch import TorchTrainer
 from ray.tune.schedulers import FIFOScheduler
 
-
+#IMPORTANT: Note that the model needs to be build with pl as well instead of lighning
+#ERROR IN LIGHTNING
 def train_func(config):
     torch.set_float32_matmul_precision("medium")
   

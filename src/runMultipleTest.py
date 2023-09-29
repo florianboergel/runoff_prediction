@@ -13,7 +13,7 @@ from BalticRiverPrediction.sharedUtilities import read_netcdfs, preprocess
 if __name__ == "__main__":
 
     # set seed for reproducibility   
-    L.pytorch.seed_everything(123)
+    L.seed_everything(123)
 
     # Our GPU has tensor cores, hence mixed precision training is enabled
     # see https://sebastianraschka.com/blog/2023/llm-mixed-precision-copy.html
@@ -38,9 +38,9 @@ if __name__ == "__main__":
     # Note that this set of parameters will be defined by runTuning.py
 
     modelParameters = {
-    "input_dim":16, # timesteps
+    "input_dim":32, # timesteps
     "hidden_dim":1, # Channels -> right now only precipitation
-    "kernel_size":(5,5), # applied for spatial convolutions
+    "kernel_size":(7,7), # applied for spatial convolutions
     "num_layers":4, # number of convLSTM layers
     "batch_first":True, # first index is batch
     "bias":True, 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     dataLoader = AtmosphereDataModule(
     data=data,
     runoff=runoff,
-    batch_size=16,
+    batch_size=32,
     input_size=modelParameters["input_dim"]
     )
 
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # Lightning model wrapper
     LighningBaltNet = LightningModel(
         pyTorchBaltNet,
-        learning_rate=1e-3,
+        learning_rate=1e-4,
         cosine_t_max=num_epochs
     )
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
         callbacks=callbacks,
         max_epochs=num_epochs,
         accelerator="cuda",
-        devices=2,
+        devices=1,
         logger=CSVLogger(
             save_dir="/silor/boergel/paper/runoff_prediction/logs",
             name="BaltNet1"
@@ -95,4 +95,3 @@ if __name__ == "__main__":
     )
 
     trainer.fit(model=LighningBaltNet, datamodule=dataLoader)
-    # trainer.test(model=LighningBaltNet, datamodule=dataLoader)
