@@ -4,7 +4,9 @@
 \PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
 %
 \documentclass[
-]{agujournal2019}
+  letterpaper,
+  DIV=11,
+  numbers=noendperiod]{scrartcl}
 
 \usepackage{amsmath,amssymb}
 \usepackage{lmodern}
@@ -36,7 +38,7 @@
 \makeatother
 \usepackage{xcolor}
 \setlength{\emergencystretch}{3em} % prevent overfull lines
-\setcounter{secnumdepth}{5}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
 % Make \paragraph and \subparagraph free-standing
 \ifx\paragraph\undefined\else
   \let\oldparagraph\paragraph
@@ -96,11 +98,7 @@
 \newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
-\usepackage{url} %this package should fix any errors with URLs in refs.
-\usepackage{lineno}
-\usepackage[inline]{trackchanges} %for better track changes. finalnew option will compile document with changes incorporated.
-\usepackage{soul}
-\linenumbers
+\KOMAoption{captions}{tableheading}
 \makeatletter
 \makeatother
 \makeatletter
@@ -168,59 +166,21 @@
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\journalname{Geophysical Research Letters}
-
-\draftfalse
+\title{Preparing your manuscript}
+\author{Florian Börgel \and Sven Karsten}
+\date{9/29/23}
 
 \begin{document}
-\title{Preparing your manuscript}
-
-\authors{Florian Börgel\affil{1}, Sven Karsten\affil{1}}
-\affiliation{1}{Leibniz-Institute for Baltic Sea Research Warnemünde, }
-\correspondingauthor{Florian Börgel}{florian.boergel@io-warnemuende.de}
-
-
+\maketitle
 \begin{abstract}
 The abstract (1) states the nature of the investigation and (2)
 summarizes the important conclusions. The abstract should be suitable
 for indexing. Your abstract should:
-
-\begin{itemize}
-\tightlist
-\item
-  Be set as a single paragraph.
-\item
-  Be less than 250 words for all journals except GRL, for which the
-  limit is 150 words.
-\item
-  Not include table or figure mentions.
-\item
-  Avoid reference citations unless dependent on or directly related to
-  another paper (e.g., companion, comment, reply, or commentary on
-  another paper(s)). AGU's Style Guide discusses formatting citations in
-  abstracts.
-\item
-  Define all abbreviations.
-\end{itemize}
 \end{abstract}
-
-\section*{Plain Language Summary}
-A Plain Language Summary (PLS) can be an incredibly effective science
-communication tool. By summarizing your paper in non-technical terms,
-you can explain your research and its relevance to a much broader
-audience. A PLS is required for submissions to AGU Advances, G-Cubed,
-GeoHealth, GRL, JAMES, JGR: Biogeosciences, JGR: Oceans, JGR: Planets,
-JGR: Solid Earth, JGR: Atmospheres, Space Weather, and Reviews of
-Geophysics, but optional for other journals. A PLS should be no longer
-than 200 words and should be free of jargon, acronyms, equations, and
-any technical information that would be unknown to people from outside
-your scientific discipline. Read our tips for creating an effective PLS.
-
-
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, sharp corners, borderline west={3pt}{0pt}{shadecolor}, frame hidden, boxrule=0pt, interior hidden, enhanced]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, enhanced, frame hidden, borderline west={3pt}{0pt}{shadecolor}, interior hidden, boxrule=0pt, sharp corners]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
-\section{Introduction}\label{introduction}}
+\subsection{Introduction}\label{introduction}}
 
 River runoff is an important component of the global water cycle as it
 comprises about one third of the precipitation over land areas
@@ -270,28 +230,43 @@ spatiotemporal sequence forecasting challenge, highlighting its
 advantages and potential future applications.
 
 \hypertarget{methods}{%
-\section{Methods}\label{methods}}
+\subsection{Methods}\label{methods}}
 
 \hypertarget{lstm-network}{%
-\subsection{LSTM network}\label{lstm-network}}
+\subsubsection{LSTM network}\label{lstm-network}}
 
 The Long Short-Term Memory (LSTM), a specialized form of Recurrent
 Neural Networks (RNNs), is specifically tailored for modeling temporal
 sequences. Its unique design allows it to adeptly handle long-range
 dependencies, setting it apart from traditional RNNs in terms of
-accuracy. This prowess in modeling long-range dependencies has been
-validated in various studies {[}12, 11, 17, 23{]}. The cornerstone of
-LSTM's innovation is its memory cell, \(c_t\)t, which functions as a
-repository of state information, also refered to as long-term memory.
-This cell is accessed, modified, and reset through several
-self-parameterized gates. As new inputs arrive, their information is
-accumulated into the cell if the input gate is activated. The forget
-gate \(f_t\) defines the percentage of the previous cell status that is
-stored \(c_{t-1}\)\hspace{0pt}. The decision to propagate the latest
-cell output, \(c_t\), to the final state, \(h_t\), is governed by the
-output gate, \(o_t\). A significant advantage of this architecture is
-the memory cell's ability to retain gradients. This mechanism addresses
-the vanishing gradient problem, where, as input sequences elongate, the
+accuracy (see Figure~\ref{fig-lstm}).
+
+\begin{figure}
+
+{\centering \includegraphics{draw_lstm.pdf}
+
+}
+
+\caption{\label{fig-lstm}Inner structure of a Long Short-Term Memory
+Cell}
+
+\end{figure}
+
+This performance in modeling long-range dependencies has been validated
+in various studies. The key component of LSTM's innovation is its memory
+cell, \(c_t\)t, which stores state information, also refered to as
+long-term memory. This cell is accessed, modified, and reset through
+several self-parameterized gates. For the input of the sequence \(x_t\)
+input, the forget gate \(f_t\) defines the percentage of the previous
+long-term memory status \(c_{t-1}\) that should be retained
+stored\hspace{0pt}. Next the input gate \(i_t\) decides how much of the
+input is added to the the long-term memory, forming the updated cell
+state \(c_{t}\). The decision to propagate the latest cell output,
+\(c_t\), to the final state, \(h_t\), is governed by the output gate,
+\(o_t\), representing the updated short-term memory of the hidden state
+\(h_t\). A significant advantage of this architecture is the memory
+cell's ability to retain gradients. This mechanism addresses the
+vanishing gradient problem, where, as input sequences elongate, the
 influence of initial stages becomes harder to capture, causing gradients
 of early input points to approach zero. The LSTM's activation function,
 inherently recurrent, mirrors the identity function with a consistent
@@ -310,13 +285,38 @@ h_t &= o_t \circ \tanh(c_t)
 \end{aligned}
 \]
 
-\hypertarget{convlstm-network}{%
-\subsection{ConvLSTM network}\label{convlstm-network}}
+with
 
-The FC-LSTM, while adept in many scenarios, falters in encoding spatial
-information when handling spatiotemporal data due to its reliance on
-full connections in both input-to-state and state-to-state transitions.
-Addressing this limitation, our design ensures that all inputs
+\begin{itemize}
+\tightlist
+\item
+  \(x_t\): Input vector at time step \(t\).
+\item
+  \(h_{t-1}\): Hidden state from the previous time step.
+\item
+  \(C_{t-1}\): Cell state from the previous time step.
+\item
+  \(W\) and \(b\): Weight matrices and bias vectors, respectively,
+  associated with the gates of the LSTM. The subscripts denote the
+  specific gate or operation they are associated with (e.g., \(W_f\) and
+  \(b_f\) are the weight matrix and bias for the forget gate,
+  respectively).
+\item
+  \(\sigma\): Sigmoid activation function, which squashes values between
+  0 and 1.
+\item
+  \(\tanh\): Hyperbolic tangent activation function, which squashes
+  values between -1 and 1
+\end{itemize}
+
+\hypertarget{convlstm-network}{%
+\subsubsection{ConvLSTM network}\label{convlstm-network}}
+
+The FC-LSTM fails to handle information when handling spatiotemporal
+data due to its reliance on full connections in both input-to-state and
+state-to-state transitions. To adress this limitation we use a convLSTM
+architecture. convLSTM replaces the fully connected operations in the
+LSTM with convolutional operations. Hence, all inputs
 \(X_1, \ldots, X_t\), cell outputs \(C_1, \ldots, C_t\), hidden states
 \(H_1, \ldots, H_t\), and gates \(i_t, f_t, o_t\) of the ConvLSTM are 3D
 tensors. The last two dimensions of these tensors represent spatial
@@ -339,32 +339,44 @@ H_t &= o_t \circ \tanh(C_t)
 \end{aligned}
 \]
 
-Considering the states as representations of moving entities, a ConvLSTM
-with a larger transitional kernel can capture rapid movements, while a
-smaller kernel is apt for slower motions. Drawing parallels with
-{[}16{]}, the traditional FC-LSTM's inputs, cell outputs, and hidden
-states can also be envisioned as 3D tensors, with the last two
-dimensions being unitary. Thus, the FC-LSTM can be seen as a specific
-instance of ConvLSTM where all features are concentrated on a singular
-cell.
+In summary, the ConvLSTM excels at processing tasks that demand a
+combined understanding of spatial patterns and temporal sequences in
+data. It merges the image-processing capabilities of Convolutional
+Neural Networks (CNNs) with the time-series modeling of Long Short-Term
+Memory (LSTM) networks.
 
-To maintain consistency in the dimensions of states and inputs, padding
-is essential before convolution operations. This padding, especially at
-boundary points, can be interpreted as leveraging the state of external
-surroundings for computations. Typically, all LSTM states are
-initialized to zero before the first input, symbolizing a lack of
-knowledge about future events. Similarly, zero-padding (as adopted in
-this study) on hidden states sets the external world's state to zero,
-implying no prior information about external conditions. This padding
-approach allows for differential treatment of boundary points, proving
-advantageous in many scenarios. For instance, in a system with a ball
-moving and bouncing off unseen walls, the existence of these walls can
-be inferred by observing the ball's repeated bounces, a deduction
-challenging if boundary points share the same state transition dynamics
-as inner points.
+\hypertarget{implemented-model-architecture}{%
+\subsubsection{Implemented model
+architecture}\label{implemented-model-architecture}}
+
+We first implemented the ConvLSTM using and encoder/decoder structure as
+discussed in \ldots{} . To predict all 97 rivers entering the Baltic Sea
+at once, we flatten the output and use fully connected layers resulting
+in 97 outputs.
+
+For the computation we use the following set of hyper parameters:
+
+\hypertarget{tbl-letters}{}
+\begin{longtable}[]{@{}ll@{}}
+\caption{\label{tbl-letters}Hyperparameters}\tabularnewline
+\toprule()
+Parameter name & Parameter size \\
+\midrule()
+\endfirsthead
+\toprule()
+Parameter name & Parameter size \\
+\midrule()
+\endhead
+Num. timesteps & 32 \\
+Conv. Kernelsize & (7,7) \\
+Num. ConvLSTM layers & 4 \\
+Batch size & 32 \\
+~Learning Rate & 1e-4 with CosineAnnealing \\
+\bottomrule()
+\end{longtable}
 
 \hypertarget{acknowledgments}{%
-\section{Acknowledgments}\label{acknowledgments}}
+\subsection{Acknowledgments}\label{acknowledgments}}
 
 Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
 fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
@@ -373,7 +385,7 @@ Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
 fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
 
 \hypertarget{open-research}{%
-\section{Open research}\label{open-research}}
+\subsection{Open research}\label{open-research}}
 
 Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
 fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
@@ -382,13 +394,11 @@ Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
 fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
 
 \hypertarget{references}{%
-\section*{References}\label{references}}
-\addcontentsline{toc}{section}{References}
+\subsection*{References}\label{references}}
+\addcontentsline{toc}{subsection}{References}
 
 \hypertarget{refs}{}
 \begin{CSLReferences}{0}{0}
-\vspace{1em}
-
 \end{CSLReferences}
 
 
