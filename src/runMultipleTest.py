@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # Loads the atmospheric data in batches
     dataLoader = AtmosphereDataModule(
-    data=data,
+    atmosphericData=data,
     runoff=runoff,
     batch_size=32,
     input_size=30
