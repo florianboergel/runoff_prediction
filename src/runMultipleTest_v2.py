@@ -195,8 +195,6 @@ if __name__ == "__main__":
     "dimensions": (191, 206) # dimensions of atmospheric forcing
     }
 
-        ### Setup model
-
     # Loads the atmospheric data in batches
     dataLoader = AtmosphereDataModule(
     atmosphericData=data,
@@ -205,7 +203,7 @@ if __name__ == "__main__":
     input_size=30
     )
 
-    num_epochs = 5
+    num_epochs = 200
 
     # initalize model
     pyTorchBaltNet = BaltNet(modelPar=modelParameters)
