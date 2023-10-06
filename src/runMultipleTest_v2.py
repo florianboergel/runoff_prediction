@@ -210,6 +210,7 @@ if __name__ == "__main__":
         data.to_netcdf(f"{datapath}/rain.nc")
     if os.path.isfile(f"{datapath}/runoff.nc"):
         runoff = xr.open_dataset(f"{datapath}/runoff.nc")
+        runoff = runoff.roflux
     else:
         runoff = read_netcdfs(
             f"{datapath}/runoffData/combined_fastriver_*.nc",
