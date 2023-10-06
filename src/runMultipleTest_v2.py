@@ -37,12 +37,6 @@ class AtmosphericDataset(Dataset):
         runoffDataMean = runoffData.mean("time")
         runoffDataSTD = runoffData.std("time")
         self.runoffDataStats = (runoffDataMean, runoffDataSTD)
-
-        # # save data
-        # np.savetxt(
-        #     "/silor/boergel/paper/runoff_prediction/data/modelStats.txt",
-        #     [runoffDataMean, runoffDataSTD]
-        # )
         
         # normalize data
         X = ((atmosphericData - atmosphericDataMean)/atmosphericDataStd).compute()
@@ -87,9 +81,6 @@ class AtmosphereDataModule(L.LightningDataModule):
         train_size = int(0.9 * n_samples)
         val_size = n_samples - train_size
         self.train, self.val, = random_split(dataset, [train_size, val_size])
-        # val_size = int(0.1 * n_samples)
-        # test_size = n_samples - train_size  - val_size
-        # self.train, self.val, self.test = random_split(dataset, [train_size, val_size, test_size])
 
     def train_dataloader(self):
         return DataLoader(
@@ -97,7 +88,9 @@ class AtmosphereDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True, 
             drop_last=True, 
-            num_workers=self.num_workers)
+            num_workers=self.num_workers,
+            pin_memory=True  # Speed up data transfer to GPU
+        )
     
     def val_dataloader(self):
         return DataLoader(
@@ -105,17 +98,9 @@ class AtmosphereDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
-            drop_last=True)
-
-    # def test_dataloader(self):
-    #     return DataLoader(
-    #         self.test,
-    #         batch_size=self.batch_size,
-    #         shuffle=False,
-    #         num_workers=self.num_workers, 
-    #         drop_last=True)
-
-#| export
+            drop_last=True,
+            pin_memory=True  # Speed up data transfer to GPU
+        )
 class BaltNet(nn.Module):
     def __init__(self, modelPar):
         super(BaltNet, self).__init__()
@@ -145,27 +130,6 @@ class BaltNet(nn.Module):
                 bias=self.bias,
                 return_all_layers=self.return_all_layers
         )
-
-        # CNN layers to map the output of convLSTM2 to 97 rivers
-        # self.cnn_layers = nn.Sequential(
-        #     nn.Conv2d(self.hidden_dim, 32, kernel_size=3, stride=1, padding=1),
-        #     nn.ReLU(),
-        #     nn.AdaptiveAvgPool2d((1, 1)),  # Global Average Pooling
-        #     nn.Flatten(),
-        #     nn.Linear(32, 97)
-        # )
-
-        # CNN layers to map the output of convLSTM2 to 97 rivers
-        # self.cnn_layers = nn.Sequential(
-        #     nn.Conv2d(self.hidden_dim, 128, kernel_size=3, stride=1, padding=1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=2, stride=2),
-        #     nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(kernel_size=2, stride=2),
-        #     nn.Flatten(),
-        #     nn.Linear(256 * (self.dimensions[0] // 4) * (self.dimensions[1] // 4), 97)
-        # )
         
         self.fc_layers = torch.nn.Sequential(
             torch.nn.Linear(self.linear_dim, 256),
