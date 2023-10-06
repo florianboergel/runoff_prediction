@@ -186,7 +186,7 @@ if __name__ == "__main__":
 
     modelParameters = {
     "input_dim": 1, # Number of channel, right now only precipitation
-    "hidden_dim": 8, # hidden states
+    "hidden_dim": 6, # hidden states
     "kernel_size":(5,5), # applied for spatial convolutions
     "num_layers": 3, # number of convLSTM layers
     "batch_first":True, # first index is batch
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     ]
 
     trainer = L.Trainer(
-        precision=16,
+        precision="bf16-mixed",
         callbacks=callbacks,
         max_epochs=num_epochs,
         accelerator="cuda",
