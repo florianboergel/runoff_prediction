@@ -190,8 +190,9 @@ class AtmosphericDataset(Dataset):
         
         # If only 3 dimension are available (time, lat, lon) 
         # an additional dimension for the channel is added
+        # to end up with (time, channel, lat, lon)
         if len(atmosphericData.ndim) == 3:
-            self.x = torch.tensor(X.data, dtype=torch.float32).unsqueeze(dim=0)
+            self.x = torch.tensor(X.data, dtype=torch.float32).unsqueeze(dim=1)
         else:
             assert len(atmosphericData.ndim) == 4
             self.x = torch.tensor(X.data, dtype=torch.float32)

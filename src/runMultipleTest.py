@@ -28,11 +28,11 @@ if __name__ == "__main__":
         transform_func=lambda ds:preprocess(ds)
         ) 
 
-    data = read_netcdfs(
-        files=f"{datapath}/atmosphericForcing/????/shumi.mom.dta.nc",
-        dim="time",
-        transform_func=lambda ds:preprocess(ds)
-        )             
+    # data = read_netcdfs(
+    #     files=f"{datapath}/atmosphericForcing/????/shumi.mom.dta.nc",
+    #     dim="time",
+    #     transform_func=lambda ds:preprocess(ds)
+    #     )             
 
     runoff = read_netcdfs(
         f"{datapath}/runoffData/combined_fastriver_*.nc",
@@ -44,8 +44,8 @@ if __name__ == "__main__":
     # Note that this set of parameters will be defined by runTuning.py
 
     modelParameters = {
-    "input_dim":30, # timesteps
-    "hidden_dim":1, # Channels -> right now only precipitation
+    "input_dim": 1, # Number of channel, right now only precipitation
+    "hidden_dim":30, # hidden states
     "kernel_size":(5,5), # applied for spatial convolutions
     "num_layers":3, # number of convLSTM layers
     "batch_first":True, # first index is batch
@@ -59,12 +59,12 @@ if __name__ == "__main__":
     data=data,
     runoff=runoff,
     batch_size=32,
-    input_size=modelParameters["input_dim"]
+    input_size=30
     )
 
     ### Setup model
 
-    num_epochs = 600
+    num_epochs = 20
 
     # initalize model
     pyTorchBaltNet = BaltNet(modelPar=modelParameters)
