@@ -55,6 +55,19 @@ class BaltNet(nn.Module):
                 return_all_layers=self.return_all_layers
         )
 
+        # CNN layers to map the output of convLSTM2 to 97 rivers
+        self.cnn_layers = nn.Sequential(
+            nn.Conv2d(self.hidden_dim, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Flatten(),
+            nn.Linear(128 * (self.dimensions[0] // 4) * (self.dimensions[1] // 4), 97)
+        )
+
+
         self.fc_layers = torch.nn.Sequential(
             torch.nn.Linear(self.linear_dim, 512),
             torch.nn.ReLU(),
@@ -65,10 +78,11 @@ class BaltNet(nn.Module):
 
     def forward(self, x):
         _, encode_state = self.convLSTM(x)
-        decoder_out, _ = self.convLSTM2(x[:,-1:,:,:,:], encode_state)
-        x = decoder_out[0]
-        x = torch.flatten(x, start_dim=1)
-        x = self.fc_layers(x).squeeze()
+        decoder_out, _ = self.convLSTM2(x[:,-1,:,:,:].unsqueeze(dim=1), encode_state)
+        x = decoder_out[0].squeeze(1)
+        x = self.cnn_layers(x).squeeze()
+        # x = torch.flatten(x, start_dim=1)
+        # x = self.fc_layers(x).squeeze()
         return x
 
 
@@ -176,7 +190,7 @@ class AtmosphericDataset(Dataset):
         runoffData = runoff.transpose("time", "river")
         runoffDataMean = runoffData.mean("time")
         runoffDataSTD = runoffData.std("time")
-        self.runoffData = (runoffDataMean, runoffDataSTD)
+        self.runoffDataStats = (runoffDataMean, runoffDataSTD)
 
         # save data
         np.savetxt(
@@ -195,16 +209,15 @@ class AtmosphericDataset(Dataset):
         xStacked = X.to_array(dim='variable')
         xStacked = xStacked.transpose("time", "variable", "lat", "lon")
 
-        if len(xStacked.data.ndim) == 3:
-            self.x = torch.tensor(xStacked.data, dtype=torch.float32).unsqueeze(dim=1)
-        else:
-            assert len(xStacked.data.ndim) == 4
-            self.x = torch.tensor(xStacked.data, dtype=torch.float32)
-       
+        # if len(xStacked.data.ndim) == 3:
+        #     self.x = torch.tensor(xStacked.data, dtype=torch.float32).unsqueeze(dim=1)
+        # else:
+        assert len(xStacked.data.ndim) == 4
+        self.x = torch.tensor(xStacked.data, dtype=torch.float32)
         self.y = torch.tensor(y.data, dtype=torch.float32)
 
     def __getitem__(self, index):
-        return self.x[:, index:index+(self.input_size)], self.y[index+int(self.input_size)]
+        return self.x[index:index+(self.input_size)], self.y[index+int(self.input_size)]
 
     def __len__(self):
         return self.y.shape[0]-(self.input_size)
