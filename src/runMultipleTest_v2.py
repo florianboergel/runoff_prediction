@@ -265,6 +265,7 @@ if __name__ == "__main__":
     ]
 
     trainer = L.Trainer(
+        precision=16,
         callbacks=callbacks,
         max_epochs=num_epochs,
         accelerator="cuda",
