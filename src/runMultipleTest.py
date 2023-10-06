@@ -26,7 +26,13 @@ if __name__ == "__main__":
         files=f"{datapath}/atmosphericForcing/????/rain.mom.dta.nc",
         dim="time",
         transform_func=lambda ds:preprocess(ds)
-        )       
+        ) 
+
+    data = read_netcdfs(
+        files=f"{datapath}/atmosphericForcing/????/shumi.mom.dta.nc",
+        dim="time",
+        transform_func=lambda ds:preprocess(ds)
+        )             
 
     runoff = read_netcdfs(
         f"{datapath}/runoffData/combined_fastriver_*.nc",
@@ -38,10 +44,10 @@ if __name__ == "__main__":
     # Note that this set of parameters will be defined by runTuning.py
 
     modelParameters = {
-    "input_dim":32, # timesteps
+    "input_dim":30, # timesteps
     "hidden_dim":1, # Channels -> right now only precipitation
-    "kernel_size":(7,7), # applied for spatial convolutions
-    "num_layers":4, # number of convLSTM layers
+    "kernel_size":(5,5), # applied for spatial convolutions
+    "num_layers":3, # number of convLSTM layers
     "batch_first":True, # first index is batch
     "bias":True, 
     "return_all_layers": False, 
@@ -58,7 +64,7 @@ if __name__ == "__main__":
 
     ### Setup model
 
-    num_epochs = 200
+    num_epochs = 600
 
     # initalize model
     pyTorchBaltNet = BaltNet(modelPar=modelParameters)
@@ -66,8 +72,8 @@ if __name__ == "__main__":
     # Lightning model wrapper
     LighningBaltNet = LightningModel(
         pyTorchBaltNet,
-        learning_rate=1e-4,
-        cosine_t_max=num_epochs
+        learning_rate=1e-3,
+        cosine_t_max=40
     )
 
     # save best model 
@@ -86,7 +92,7 @@ if __name__ == "__main__":
         callbacks=callbacks,
         max_epochs=num_epochs,
         accelerator="cuda",
-        devices=1,
+        devices=2,
         logger=CSVLogger(
             save_dir="/silor/boergel/paper/runoff_prediction/logs",
             name="BaltNet1"

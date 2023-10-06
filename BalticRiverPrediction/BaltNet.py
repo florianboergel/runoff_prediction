@@ -147,51 +147,55 @@ class LightningModel(L.LightningModule):
     
     def configure_optimizers(self):
         opt = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=self.cosine_t_max)
+        sch = torch.optim.lr_scheduler.CosineAnnealingLR(opt, eta_min=1e-7, T_max=self.cosine_t_max)
 
         return [opt], [sch]
 
 
 # %% ../nbs/02_BaltNet.ipynb 6
 class AtmosphericDataset(Dataset):
-    def __init__(self, input_size, data, runoff, transform=None):
+    def __init__(self, input_size, atmosphericData, runoff, transform=None):
 
-
+        # Update 6.10.2023
+        # The function is not handling the preprocessing anymore
+        # which makes the function more flexible 
         # Following the technical description of the river data (Germo et al.)
         # the original river data is limited to 1979 to 2011
-
-        start_year, end_year = 1979, 2011
-        self.timeRange = slice(str(start_year), str(end_year))
+        # start_year, end_year = 1979, 2011
+        # self.timeRange = slice(str(start_year), str(end_year))
+        
+        # Length of the sequence
         self.input_size = input_size
 
+        # input data (x) 
+        atmosphericDataStd = atmosphericData.std("time") # dimension will be channel, lat, lon
+        atmosphericDataMean = atmosphericData.mean("time")
+        self.atmosphericStats = (atmosphericDataMean, atmosphericDataStd)
+
+        # output data - label (y)
         runoffData = runoff.transpose("time", "river")
         runoffDataMean = runoffData.mean("time")
         runoffDataSTD = runoffData.std("time")
-
-        rainData = data["RAIN"].sel(time=self.timeRange)
-        rainDataMean = rainData.mean("time")
-        rainDataSTD = rainData.std("time")
-
-        self.rainData = (rainDataMean, rainDataSTD)
         self.runoffData = (runoffDataMean, runoffDataSTD)
 
+        # save data
         np.savetxt(
-            "/silor/boergel/paper/runoff_prediction/data/runoffMeanStd.txt",
+            "/silor/boergel/paper/runoff_prediction/data/modelStats.txt",
             [runoffDataMean, runoffDataSTD]
         )
-
-        X = (rainData - rainDataMean)/rainDataSTD
-        y = (runoffData - runoffDataMean)/runoffDataSTD
-
-        # TODO 
-        # add dummy dimension in only one atmospheric data file
-        # is loaded
         
-        X = ((rainData - rainDataMean) / rainDataSTD).compute()
-        y = ((runoffData - runoffDataMean) / runoffDataSTD).compute()
-
-        X = torch.tensor(X.data, dtype=torch.float32).unsqueeze(dim=0)
-        self.x = X
+        # normalize data
+        X = ((atmosphericData - atmosphericDataMean)/atmosphericDataStd).compute()
+        y = ((runoffData - runoffDataMean)/runoffDataSTD).compute()
+        
+        # If only 3 dimension are available (time, lat, lon) 
+        # an additional dimension for the channel is added
+        if len(atmosphericData.ndim) == 3:
+            self.x = torch.tensor(X.data, dtype=torch.float32).unsqueeze(dim=0)
+        else:
+            assert len(atmosphericData.ndim) == 4
+            self.x = torch.tensor(X.data, dtype=torch.float32)
+       
         self.y = torch.tensor(y.data, dtype=torch.float32)
 
     def __getitem__(self, index):
@@ -203,10 +207,11 @@ class AtmosphericDataset(Dataset):
 
 # %% ../nbs/02_BaltNet.ipynb 7
 class AtmosphereDataModule(L.LightningDataModule):
-    def __init__(self, data, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
+    
+    def __init__(self, atmosphericData, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
         super().__init__()
 
-        self.data = data
+        self.data = atmosphericData
         self.runoff = runoff
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -215,12 +220,18 @@ class AtmosphereDataModule(L.LightningDataModule):
     
     def setup(self, stage:str):
         UserWarning("Loading atmospheric data ...")
-        dataset = AtmosphericDataset(data=self.data, runoff=self.runoff, input_size=self.input_size)
+        dataset = AtmosphericDataset(
+            atmosphericData=self.data,
+            runoff=self.runoff,
+            input_size=self.input_size
+            )
         n_samples = len(dataset)
-        train_size = int(0.8 * n_samples)
-        val_size = int(0.1 * n_samples)
-        test_size = n_samples - train_size - val_size
-        self.train, self.val, self.test = random_split(dataset, [train_size, val_size, test_size])
+        train_size = int(0.9 * n_samples)
+        val_size = n_samples - train_size
+        self.train, self.val, = random_split(dataset, [train_size, val_size])
+        # val_size = int(0.1 * n_samples)
+        # test_size = n_samples - train_size  - val_size
+        # self.train, self.val, self.test = random_split(dataset, [train_size, val_size, test_size])
 
     def train_dataloader(self):
         return DataLoader(
@@ -238,10 +249,10 @@ class AtmosphereDataModule(L.LightningDataModule):
             num_workers=self.num_workers,
             drop_last=True)
 
-    def test_dataloader(self):
-        return DataLoader(
-            self.test,
-            batch_size=self.batch_size,
-            shuffle=False,
-            num_workers=self.num_workers, 
-            drop_last=True)
+    # def test_dataloader(self):
+    #     return DataLoader(
+    #         self.test,
+    #         batch_size=self.batch_size,
+    #         shuffle=False,
+    #         num_workers=self.num_workers, 
+    #         drop_last=True)
