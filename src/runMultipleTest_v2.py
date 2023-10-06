@@ -38,11 +38,11 @@ class AtmosphericDataset(Dataset):
         runoffDataSTD = runoffData.std("time")
         self.runoffDataStats = (runoffDataMean, runoffDataSTD)
 
-        # save data
-        np.savetxt(
-            "/silor/boergel/paper/runoff_prediction/data/modelStats.txt",
-            [runoffDataMean, runoffDataSTD]
-        )
+        # # save data
+        # np.savetxt(
+        #     "/silor/boergel/paper/runoff_prediction/data/modelStats.txt",
+        #     [runoffDataMean, runoffDataSTD]
+        # )
         
         # normalize data
         X = ((atmosphericData - atmosphericDataMean)/atmosphericDataStd).compute()
