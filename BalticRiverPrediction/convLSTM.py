@@ -91,7 +91,7 @@ class ConvLSTM(nn.Module):
     """
 
     def __init__(self, input_dim, hidden_dim, kernel_size, num_layers,
-                 batch_first=False, bias=True, return_all_layers=False):
+                 batch_first=False, bias=True, return_all_layers=False, stateful=False):
         super(ConvLSTM, self).__init__()
 
         self._check_kernel_size_consistency(kernel_size)
@@ -121,6 +121,9 @@ class ConvLSTM(nn.Module):
 
         self.cell_list = nn.ModuleList(cell_list)
 
+        self.last_state = None
+        self.stateful = stateful
+
     def forward(self, input_tensor, hidden_state=None):
         """
 
@@ -143,6 +146,9 @@ class ConvLSTM(nn.Module):
 
         # Implement stateful ConvLSTM
         if hidden_state is None:
+            if self.stateful and self.last_state is not None:
+                hidden_state = self.last_state
+        else:
             # Since the init is done in forward. Can send image size here
             hidden_state = self._init_hidden(batch_size=b,
                                              image_size=(h, w))
@@ -171,7 +177,9 @@ class ConvLSTM(nn.Module):
         if not self.return_all_layers:
             layer_output_list = layer_output_list[-1:]
             last_state_list = last_state_list[-1:]
-
+            
+        if self.stateful:
+            self.last_state = last_state_list
         return layer_output_list, last_state_list
 
     def _init_hidden(self, batch_size, image_size):
