@@ -125,33 +125,22 @@ class ConvLSTM(nn.Module):
         self.stateful = stateful
 
     def forward(self, input_tensor, hidden_state=None):
-        """
-
-        Parameters
-        ----------
-        input_tensor: todo
-            5-D Tensor either of shape (t, b, c, h, w) or (b, t, c, h, w)
-        hidden_state: todo
-            None. todo implement stateful
-
-        Returns
-        -------
-        last_state_list, layer_output
-        """
         if not self.batch_first:
             # (t, b, c, h, w) -> (b, t, c, h, w)
             input_tensor = input_tensor.permute(1, 0, 2, 3, 4)
 
         b, _, _, h, w = input_tensor.size()
 
-        # Implement stateful ConvLSTM
         if hidden_state is None:
-            if self.stateful and self.last_state is not None:
+            # Initialize hidden state if it's the first call or if not stateful
+            if not self.stateful or self.last_state is None:
+                hidden_state = self._init_hidden(batch_size=b, image_size=(h, w))
+            else:
+                # If the model is stateful and last_state is not None, use last_state
                 hidden_state = self.last_state
         else:
-            # Since the init is done in forward. Can send image size here
-            hidden_state = self._init_hidden(batch_size=b,
-                                             image_size=(h, w))
+            # If hidden_state was provided as an input, we use it directly
+            self.last_state = hidden_state
 
         layer_output_list = []
         last_state_list = []
@@ -160,27 +149,33 @@ class ConvLSTM(nn.Module):
         cur_layer_input = input_tensor
 
         for layer_idx in range(self.num_layers):
-
+            # Fetching the hidden state for the current layer
             h, c = hidden_state[layer_idx]
             output_inner = []
+
             for t in range(seq_len):
-                h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :, :],
-                                                 cur_state=[h, c])
+                h, c = self.cell_list[layer_idx](
+                    input_tensor=cur_layer_input[:, t, :, :, :],
+                    cur_state=[h, c]
+                )
                 output_inner.append(h)
 
             layer_output = torch.stack(output_inner, dim=1)
             cur_layer_input = layer_output
 
             layer_output_list.append(layer_output)
-            last_state_list.append([h, c])
+            last_state_list.append((h, c))  # Save the last state as a tuple for consistency
 
         if not self.return_all_layers:
-            layer_output_list = layer_output_list[-1:]
-            last_state_list = last_state_list[-1:]
-            
+            layer_output_list = [layer_output_list[-1]]
+            last_state_list = [last_state_list[-1]]
+
         if self.stateful:
-            self.last_state = last_state_list
+            self.last_state = last_state_list  # Save the last state for the next call
+
         return layer_output_list, last_state_list
+
+
 
     def _init_hidden(self, batch_size, image_size):
         init_states = []

@@ -26,27 +26,13 @@ from .sharedUtilities import read_netcdfs, preprocess, plot_loss_and_acc
 
 # %% ../nbs/02_BaltNet.ipynb 4
 class BaltNet(nn.Module):
-    """
-    A custom neural network architecture designed for sequence-to-sequence learning using convolutional LSTMs.
-    
-    Attributes:
-    - encoder: A convolutional LSTM serving as the encoder.
-    - decoder: A convolutional LSTM serving as the decoder.
-    - river_predictors: A feed-forward network for predicting river values.
-    - attention_weights: Weights for the spatial attention mechanism.
-    
-    Parameters:
-    - modelPar (dict): Dictionary containing the model parameters.
-    """
-    
     def __init__(self, modelPar):
         super(BaltNet, self).__init__()
 
-        # Initialize model parameters from the provided dictionary
+        # Initialize all attributes
         for k, v in modelPar.items():
             setattr(self, k, v)
 
-        # Initialize encoder using convolutional LSTM
         self.encoder = ConvLSTM(
             input_dim=self.input_dim,
             hidden_dim=self.hidden_dim,
@@ -57,7 +43,6 @@ class BaltNet(nn.Module):
             return_all_layers=False
         )
 
-        # Initialize decoder using convolutional LSTM
         self.decoder = ConvLSTM(
             input_dim=self.hidden_dim,
             hidden_dim=self.hidden_dim,
@@ -68,114 +53,110 @@ class BaltNet(nn.Module):
             return_all_layers=False
         )
 
-        # Compute the linear dimension for the feed-forward network
         self.linear_dim = self.dimensions[0] * self.dimensions[1] * self.hidden_dim 
 
-        # Define the feed-forward network for river predictions
+        # Single fully connected network for all rivers
+         
         self.river_predictors = nn.Sequential(
             nn.Linear(self.linear_dim, 512),
             nn.ReLU(),
-            nn.Dropout(0.1),
             nn.Linear(512, 256),
             nn.ReLU(),
             nn.Linear(256, 97)
         )
 
-        # Initialize attention weights for spatial attention mechanism
-        self.attention_weights = nn.Parameter(torch.randn(self.hidden_dim, 1, 1), requires_grad=True)
+        # Creating separate attention weights for each river
+        self.attention_weights = nn.Parameter(torch.randn(self.hidden_dim, 1, 1), requires_grad=True)  # 97 rivers
 
     def spatial_attention(self, x):
-        """
-        Applies the spatial attention mechanism to the input tensor.
-        
-        Parameters:
-        - x (torch.Tensor): Input tensor of shape `(batch_size, sequence_length, channels, height, width)`.
-        
-        Returns:
-        - output (torch.Tensor): Input tensor after applying the spatial attention mechanism.
-        """
+        """Spatial attention mechanism."""
         B, T, C, H, W = x.size()
+
         x = x.view(B * T, C, H, W)
-        # Apply attention weights
+        
+        # Apply attention weights for all rivers
         self.attention_map = torch.sigmoid(F.conv2d(x, self.attention_weights.unsqueeze(0), bias=None, stride=1, padding=0))
-        # Obtain weighted sum
-        output = x * self.attention_map
-        output = output.view(B, T, C, H, W)
+        
+        # Weighted sum
+        output = x * self.attention_map  # B*T, C, H, W
+        output = output.view(B, T, C, H, W)  # B, T, C
+
         return output
 
     def forward(self, x):
-        """
-        Forward pass of the BaltNet.
-        
-        Parameters:
-        - x (torch.Tensor): Input tensor of shape `(batch_size, sequence_length, channels, height, width)`.
-        
-        Returns:
-        - output (torch.Tensor): Predicted values for the rivers.
-        """
         B, _, _, _, _ = x.size()
-        encoder_outputs, encoder_hidden = self.encoder(x)
-        decoder_input = encoder_outputs[0][:,-1,:,:,:].unsqueeze(1)
-        decoder_outputs, _ = self.decoder(decoder_input, encoder_hidden)
-        decoder_with_spatial_attention = self.spatial_attention(decoder_outputs[0])
-        decoder_with_spatial_attention_flattened = decoder_with_spatial_attention.view(B, -1)
-        output = self.river_predictors(decoder_with_spatial_attention_flattened)
-        return output
 
+        # Pass through encoder
+        encoder_outputs, encoder_hidden = self.encoder(x)
+
+        # Use the entire encoder output as input to the decoder
+        decoder_input = encoder_outputs[0][:,-1,:,:,:].unsqueeze(1)
+
+        # Pass through decoder using the final hidden state of the encoder
+        decoder_outputs, _ = self.decoder(decoder_input, encoder_hidden)
+
+        # Apply spatial attention
+        decoder_with_spatial_attention = self.spatial_attention(decoder_outputs[0])  # B, T, C, H, W
+            
+        # Flatten the temporal sequence
+        decoder_with_spatial_attention_flattened = decoder_with_spatial_attention.view(B, -1)  #
+            
+        # Pass through its own predictor
+        output = self.river_predictors(decoder_with_spatial_attention_flattened)  # B, -1
+
+        return output
 
 # %% ../nbs/02_BaltNet.ipynb 8
 class LightningModel(L.LightningModule):
     """
-    A custom PyTorch Lightning model designed for the encapsulation of training, validation, and testing logic of a neural network.
+    A PyTorch Lightning model for training and evaluation.
     
     Attributes:
-    - model (nn.Module): The main neural network.
-    - learning_rate (float): Learning rate used for optimization.
-    - train_mse, val_mse, test_mse (torchmetrics.MeanSquaredError): Metrics for computing the mean squared error during training, validation, and testing respectively.
+        model (nn.Module): The neural network model.
+        learning_rate (float): Learning rate for the optimizer.
+        cosine_t_max (int): Maximum number of iterations for the cosine annealing scheduler.
+        train_mse (torchmetrics.MeanSquaredError): Metric for training mean squared error.
+        val_mse (torchmetrics.MeanSquaredError): Metric for validation mean squared error.
+        test_mse (torchmetrics.MeanSquaredError): Metric for testing mean squared error.
     """
     
     def __init__(self, model, learning_rate, cosine_t_max):
         """
-        Constructor for the LightningModel class.
+        Initializes the LightningModel.
 
         Args:
-            model (nn.Module): The primary neural network model.
-            learning_rate (float): Learning rate for optimization.
-            cosine_t_max (int): Maximum iterations for the cosine annealing scheduler.
+            model (nn.Module): The neural network model.
+            learning_rate (float): Learning rate for the optimizer.
+            cosine_t_max (int): Maximum number of iterations for the cosine annealing scheduler.
         """
         super().__init__()
 
-        self.model = model
         self.learning_rate = learning_rate
+        self.model = model
+        self.cosine_t_max = cosine_t_max
+
+        # Save hyperparameters except the model
         self.save_hyperparameters(ignore=["model"])
 
-        # Metrics
+        # Define metrics
         self.train_mse = torchmetrics.MeanSquaredError()
         self.val_mse = torchmetrics.MeanSquaredError()
         self.test_mse = torchmetrics.MeanSquaredError()
 
     def forward(self, x):
-        """
-        Forward pass computation.
-
-        Args:
-            x (torch.Tensor): Input tensor.
-
-        Returns:
-            torch.Tensor: Output tensor after the forward pass.
-        """
+        """Defines the forward pass of the model."""
         return self.model(x)
-
+    
     def _shared_step(self, batch, debug=False):
         """
-        A shared method for computation during training, validation, and testing.
+        Shared step for training, validation, and testing.
 
         Args:
-            batch (tuple): Input data batch.
-            debug (bool, optional): If set to True, the method will print the loss value. Defaults to False.
+            batch (tuple): Input batch of data.
+            debug (bool, optional): If True, prints the loss. Defaults to False.
 
         Returns:
-            tuple: Computed loss, actual labels, and predicted labels.
+            tuple: Computed loss, true labels, and predicted labels.
         """
         features, true_labels = batch
         logits = self.model(features)
@@ -183,123 +164,70 @@ class LightningModel(L.LightningModule):
         if debug:
             print(loss)
         return loss, true_labels, logits
-
+    
     def training_step(self, batch, batch_idx):
-        """
-        Logic for one training step.
-
-        Args:
-            batch (tuple): Training data batch.
-            batch_idx (int): Index of the batch.
-
-        Returns:
-            torch.Tensor: Loss value.
-        """
+        """Training step."""
         loss, true_labels, predicted_labels = self._shared_step(batch)
         mse = self.train_mse(predicted_labels, true_labels)
         metrics = {"train_mse": mse, "train_loss": loss}
         self.log_dict(metrics, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
         return loss
-
+    
     def validation_step(self, batch, batch_idx):
-        """
-        Logic for one validation step.
-
-        Args:
-            batch (tuple): Validation data batch.
-            batch_idx (int): Index of the batch.
-        """
+        """Validation step."""
         loss, true_labels, predicted_labels = self._shared_step(batch)
         mse = self.val_mse(predicted_labels, true_labels)
         self.log("val_loss", loss, sync_dist=True)
         self.log("val_mse", mse, prog_bar=True, sync_dist=True)
-
+    
     def test_step(self, batch, _):
-        """
-        Logic for one testing step.
-
-        Args:
-            batch (tuple): Testing data batch.
-            _ : Placeholder for batch index, not used in this method.
-
-        Returns:
-            torch.Tensor: Loss value.
-        """
+        """Test step."""
         loss, true_labels, predicted_labels = self._shared_step(batch)
         mse = self.test_mse(predicted_labels, true_labels)
         self.log("test_loss", loss, rank_zero_only=True)
         self.log("test_mse", mse, sync_dist=True)
         return loss
-
+    
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
-        """
-        Logic for one prediction step.
-
-        Args:
-            batch (tuple): Input data batch for prediction.
-            batch_idx (int): Index of the batch.
-            dataloader_idx (int, optional): Index of the dataloader. Defaults to 0.
-
-        Returns:
-            torch.Tensor: Predicted labels.
-        """
+        """Prediction step."""
         _, _, predicted_labels = self._shared_step(batch)
         return predicted_labels
 
     def configure_optimizers(self):
         """
-        Configuration method for optimizers and learning rate schedulers.
+        Configures the optimizer and learning rate scheduler.
 
         Returns:
-            dict: Dictionary containing optimizer, learning rate scheduler, and the metric to monitor.
+            tuple: List of optimizers and list of learning rate schedulers.
         """
-        opt = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        opt = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=1e-4)
         sch = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', factor=0.1, patience=10, verbose=False)
         return {"optimizer": opt, "lr_scheduler": sch, "monitor": "val_mse"}
 
-
 # %% ../nbs/02_BaltNet.ipynb 11
 class AtmosphericDataset(Dataset):
-    """
-    Dataset for atmospheric data and runoff prediction.
-    
-    Attributes:
-    - input_size (int): Length of the input sequence.
-    - atmosphericStats (tuple): Mean and standard deviation of the atmospheric data along the time dimension.
-    - runoffDataStats (tuple): Mean and standard deviation of the runoff data along the time dimension.
-    - x (torch.Tensor): Normalized atmospheric data tensor with dimensions (time, channel, lat, lon).
-    - y (torch.Tensor): Normalized runoff data tensor with dimensions (time, river).
-    """
-    
     def __init__(self, input_size, atmosphericData, runoff, transform=None):
-        """
-        Initializes the AtmosphericDataset.
-
-        Args:
-            input_size (int): Length of the input sequence.
-            atmosphericData (xr.DataArray): Atmospheric data with dimensions (time, lat, lon).
-            runoff (xr.DataArray): Runoff data with dimensions (time, river).
-            transform (callable, optional): Optional transform to be applied on a sample.
-        """
 
         # Length of the sequence
         self.input_size = input_size
 
-        # Computing statistics for normalization
-        atmosphericDataStd = atmosphericData.std("time")
+        # input data (x) 
+        atmosphericDataStd = atmosphericData.std("time") # dimension will be channel, lat, lon
         atmosphericDataMean = atmosphericData.mean("time")
         self.atmosphericStats = (atmosphericDataMean, atmosphericDataStd)
 
+        # output data - label (y)
         runoffData = runoff.transpose("time", "river")
         runoffDataMean = runoffData.mean("time")
         runoffDataSTD = runoffData.std("time")
         self.runoffDataStats = (runoffDataMean, runoffDataSTD)
-
-        # Normalizing the data
-        X = ((atmosphericData - atmosphericDataMean) / atmosphericDataStd).compute()
-        y = ((runoffData - runoffDataMean) / runoffDataSTD).compute()
-
-        # An additional dimension for the channel is added
+        
+        # normalize data
+        X = ((atmosphericData - atmosphericDataMean)/atmosphericDataStd).compute()
+        y = ((runoffData - runoffDataMean)/runoffDataSTD).compute()
+        
+        # an additional dimension for the channel is added
+        # to end up with (time, channel, lat, lon)
         xStacked = X.to_array(dim='variable')
         xStacked = xStacked.transpose("time", "variable", "y", "x")
 
@@ -308,55 +236,15 @@ class AtmosphericDataset(Dataset):
         self.y = torch.tensor(y.data, dtype=torch.float32)
 
     def __getitem__(self, index):
-        """
-        Retrieves the atmospheric data and corresponding runoff for a given index.
-
-        Args:
-            index (int): The index of the data.
-
-        Returns:
-            tuple: A tuple containing atmospheric data tensor and the corresponding runoff tensor.
-        """
         return self.x[index:index+(self.input_size)], self.y[index+int(self.input_size)]
 
     def __len__(self):
-        """
-        Retrieves the length of the dataset.
-
-        Returns:
-            int: The length of the dataset.
-        """
-        return self.y.shape[0] - (self.input_size)
-
+        return self.y.shape[0]-(self.input_size)
 
 # %% ../nbs/02_BaltNet.ipynb 13
 class AtmosphereDataModule(L.LightningDataModule):
-    """
-    A PyTorch Lightning DataModule for preparing and loading atmospheric and runoff datasets.
     
-    Attributes:
-        data (xr.DataArray): The atmospheric data.
-        runoff (xr.DataArray): The runoff data corresponding to the atmospheric data.
-        batch_size (int): The batch size for the DataLoader.
-        num_workers (int): Number of subprocesses to use for data loading.
-        add_first_dim (bool): Flag to determine if a first dimension needs to be added. (Not used in current implementation).
-        input_size (int): The input sequence length for the `AtmosphericDataset`.
-        train (Dataset): Training dataset.
-        val (Dataset): Validation dataset.
-    """
-
     def __init__(self, atmosphericData, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
-        """
-        Initializes the AtmosphereDataModule.
-
-        Args:
-            atmosphericData (xr.DataArray): The atmospheric data.
-            runoff (xr.DataArray): The runoff data.
-            batch_size (int, optional): The batch size for data loading. Defaults to 64.
-            num_workers (int, optional): Number of subprocesses to use for data loading. Defaults to 8.
-            add_first_dim (bool, optional): Flag to determine if a first dimension should be added. Defaults to True.
-            input_size (int, optional): The input sequence length for the `AtmosphericDataset`. Defaults to 30.
-        """
         super().__init__()
 
         self.data = atmosphericData
@@ -365,34 +253,21 @@ class AtmosphereDataModule(L.LightningDataModule):
         self.num_workers = num_workers
         self.add_first_dim = add_first_dim
         self.input_size = input_size
-
+    
     def setup(self, stage:str):
-        """
-        Sets up the datasets for training and validation.
-
-        Args:
-            stage (str): The stage for which the setup is done (e.g., 'train', 'test', 'predict', etc.).
-        """
         UserWarning("Loading atmospheric data ...")
         dataset = AtmosphericDataset(
             atmosphericData=self.data,
             runoff=self.runoff,
             input_size=self.input_size
-        )
+            )
         n_samples = len(dataset)
         train_size = int(0.85 * n_samples)
         val_size = n_samples - train_size
-
-        # Split the dataset into training and validation subsets
+        # self.train, self.val = train_test_split(dataset)
         self.train, self.val, = random_split(dataset, [train_size, val_size])
 
     def train_dataloader(self):
-        """
-        Prepares and returns the training DataLoader.
-
-        Returns:
-            DataLoader: The DataLoader for training data.
-        """
         return DataLoader(
             dataset=self.train,
             batch_size=self.batch_size,
@@ -401,14 +276,8 @@ class AtmosphereDataModule(L.LightningDataModule):
             num_workers=self.num_workers,
             pin_memory=False  # Speed up data transfer to GPU
         )
-
+    
     def val_dataloader(self):
-        """
-        Prepares and returns the validation DataLoader.
-
-        Returns:
-            DataLoader: The DataLoader for validation data.
-        """
         return DataLoader(
             dataset=self.val,
             batch_size=self.batch_size,
@@ -417,4 +286,3 @@ class AtmosphereDataModule(L.LightningDataModule):
             drop_last=True,
             pin_memory=False  # Speed up data transfer to GPU
         )
-

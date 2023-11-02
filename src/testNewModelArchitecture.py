@@ -54,7 +54,6 @@ class BaltNet(nn.Module):
         self.river_predictors = nn.Sequential(
             nn.Linear(self.linear_dim, 512),
             nn.ReLU(),
-            nn.Dropout(0.1),
             nn.Linear(512, 256),
             nn.ReLU(),
             nn.Linear(256, 97)
@@ -196,7 +195,7 @@ class LightningModel(L.LightningModule):
         Returns:
             tuple: List of optimizers and list of learning rate schedulers.
         """
-        opt = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=1e-5)
+        opt = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=1e-4)
         sch = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', factor=0.1, patience=10, verbose=False)
         return {"optimizer": opt, "lr_scheduler": sch, "monitor": "val_mse"}
 
@@ -429,7 +428,7 @@ if __name__ == "__main__":
         callbacks=callbacks,
         max_epochs=num_epochs,
         accelerator="cuda",
-        devices=2,
+        devices=1,
         logger=logger
         )
 
@@ -437,4 +436,4 @@ if __name__ == "__main__":
 
     dataLoader.setup(stage="")
 
-    save_attention_maps(LightningBaltNet, dataLoader.train[0][0].unsqueeze(0), filename=f"{args.modelName}_attention_maps.nc")
+    save_attention_maps(pyTorchBaltNet, dataLoader.train[0][0].unsqueeze(0), filename=f"{args.modelName}_attention_maps.nc")
