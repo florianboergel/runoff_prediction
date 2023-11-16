@@ -5,18 +5,208 @@ import sys
 import xarray as xr
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import torchmetrics
-import pytorch_lightning as pl
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
-
+from torchmetrics import Metric
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch.loggers import TensorBoardLogger
+from BalticRiverPrediction.BaltNet import AtmosphericDataset
+from BalticRiverPrediction.BaltNet import BaltNet
 
-from BalticRiverPrediction.convLSTM import ConvLSTM
-from BalticRiverPrediction.BaltNet import BaltNet, LightningModel, AtmosphereDataModule
+import torch
+import torch.nn as nn
+
+class EnhancedMSELoss(nn.Module):
+    def __init__(self, alpha=1.5):
+        """
+        Initialize the enhanced MSE loss module.
+
+        Args:
+            alpha (float): Exponential factor to increase penalty for larger errors.
+        """
+        super(EnhancedMSELoss, self).__init__()
+        self.alpha = alpha
+
+    def forward(self, predictions, targets):
+        """
+        Calculate the enhanced MSE loss.
+
+        Args:
+            predictions (torch.Tensor): The predicted values.
+            targets (torch.Tensor): The ground truth values.
+
+        Returns:
+            torch.Tensor: The calculated loss.
+        """
+        error = predictions - targets
+        mse_loss = torch.mean(error**2)
+        enhanced_error = torch.mean(torch.abs(error) ** self.alpha)
+        enhanced_mse_loss = mse_loss + enhanced_error
+        return enhanced_mse_loss
+    
+class EnhancedMSEMetric(Metric):
+    def __init__(self, alpha=1.5, dist_sync_on_step=False):
+        super().__init__(dist_sync_on_step=dist_sync_on_step)
+        self.alpha = alpha
+        self.add_state("sum_enhanced_error", default=torch.tensor(0.0), dist_reduce_fx="sum")
+        self.add_state("total", default=torch.tensor(0), dist_reduce_fx="sum")
+
+    def update(self, predictions: torch.Tensor, targets: torch.Tensor):
+        error = predictions - targets
+        mse_loss = torch.mean(error ** 2)
+        enhanced_error = torch.mean(torch.abs(error) ** self.alpha)
+
+        self.sum_enhanced_error += (mse_loss + enhanced_error) * targets.numel()
+        self.total += targets.numel()
+
+    def compute(self):
+        return self.sum_enhanced_error / self.total
+
+
+
+class AtmosphereDataModule(L.LightningDataModule):
+    
+    def __init__(self, atmosphericData, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
+        super().__init__()
+
+        self.data = atmosphericData
+        self.runoff = runoff
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.add_first_dim = add_first_dim
+        self.input_size = input_size
+    
+    def setup(self, stage:str):
+        UserWarning("Loading atmospheric data ...")
+        dataset = AtmosphericDataset(
+            atmosphericData=self.data,
+            runoff=self.runoff,
+            input_size=self.input_size
+            )
+        n_samples = len(dataset)
+        train_size = int(0.9 * n_samples)
+        val_size = n_samples - train_size
+        # self.train, self.val = train_test_split(dataset)
+        self.train, self.val, = random_split(dataset, [train_size, val_size])
+
+    def train_dataloader(self):
+        return DataLoader(
+            dataset=self.train,
+            batch_size=self.batch_size,
+            shuffle=True, 
+            drop_last=True, 
+            num_workers=self.num_workers,
+            pin_memory=False  # Speed up data transfer to GPU
+        )
+    
+    def val_dataloader(self):
+        return DataLoader(
+            dataset=self.val,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            drop_last=True,
+            pin_memory=False  # Speed up data transfer to GPU
+        )
+
+class LightningModel(L.LightningModule):
+    """
+    A PyTorch Lightning model for training and evaluation.
+    
+    Attributes:
+        model (nn.Module): The neural network model.
+        learning_rate (float): Learning rate for the optimizer.
+        cosine_t_max (int): Maximum number of iterations for the cosine annealing scheduler.
+        train_mse (torchmetrics.MeanSquaredError): Metric for training mean squared error.
+        val_mse (torchmetrics.MeanSquaredError): Metric for validation mean squared error.
+        test_mse (torchmetrics.MeanSquaredError): Metric for testing mean squared error.
+    """
+    
+    def __init__(self, model, learning_rate, cosine_t_max):
+        """
+        Initializes the LightningModel.
+
+        Args:
+            model (nn.Module): The neural network model.
+            learning_rate (float): Learning rate for the optimizer.
+            cosine_t_max (int): Maximum number of iterations for the cosine annealing scheduler.
+        """
+        super().__init__()
+
+        self.learning_rate = learning_rate
+        self.model = model
+        self.cosine_t_max = cosine_t_max
+        self.loss_function = EnhancedMSELoss(alpha=2)
+
+        # Save hyperparameters except the model
+        self.save_hyperparameters(ignore=["model"])
+
+        # Define metrics
+        self.train_mse = EnhancedMSEMetric(alpha=2)
+        self.val_mse = EnhancedMSEMetric(alpha=2)
+        self.test_mse = EnhancedMSEMetric(alpha=2)
+
+    def forward(self, x):
+        """Defines the forward pass of the model."""
+        return self.model(x)
+    
+    def _shared_step(self, batch, debug=False):
+        """
+        Shared step for training, validation, and testing.
+
+        Args:
+            batch (tuple): Input batch of data.
+            debug (bool, optional): If True, prints the loss. Defaults to False.
+
+        Returns:
+            tuple: Computed loss, true labels, and predicted labels.
+        """
+        features, true_labels = batch
+        logits = self.model(features)
+        loss = self.loss_function(logits, true_labels)
+        if debug:
+            print(loss)
+        return loss, true_labels, logits
+    
+    def training_step(self, batch, batch_idx):
+        """Training step."""
+        loss, true_labels, predicted_labels = self._shared_step(batch)
+        mse = self.train_mse(predicted_labels, true_labels)
+        metrics = {"train_mse": mse, "train_loss": loss}
+        self.log_dict(metrics, on_step=True, on_epoch=True, prog_bar=True, logger=True, sync_dist=True)
+        return loss
+    
+    def validation_step(self, batch, batch_idx):
+        """Validation step."""
+        loss, true_labels, predicted_labels = self._shared_step(batch)
+        mse = self.val_mse(predicted_labels, true_labels)
+        self.log("val_loss", loss, sync_dist=True)
+        self.log("val_mse", mse, prog_bar=True, sync_dist=True)
+    
+    def test_step(self, batch, _):
+        """Test step."""
+        loss, true_labels, predicted_labels = self._shared_step(batch)
+        mse = self.test_mse(predicted_labels, true_labels)
+        self.log("test_loss", loss, rank_zero_only=True)
+        self.log("test_mse", mse, sync_dist=True)
+        return loss
+    
+    def predict_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
+        """Prediction step."""
+        _, _, predicted_labels = self._shared_step(batch)
+        return predicted_labels
+
+    def configure_optimizers(self):
+        """
+        Configures the optimizer and learning rate scheduler.
+
+        Returns:
+            tuple: List of optimizers and list of learning rate schedulers.
+        """
+        opt = torch.optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=1e-4)
+        sch = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', factor=0.1, patience=10, verbose=False)
+        return {"optimizer": opt, "lr_scheduler": sch, "monitor": "val_mse"}
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Parse model parameters")
@@ -119,11 +309,13 @@ if __name__ == "__main__":
     pyTorchBaltNet = BaltNet(modelPar=modelParameters)
 
     if args.checkpoint: 
+        print("Loading from checkpoint")
         LightningBaltNet = LightningModel.load_from_checkpoint(
             checkpoint_path=f"{args.checkpoint}",
             learning_rate=1e-6,
             map_location="cpu",
-            model=pyTorchBaltNet
+            model=pyTorchBaltNet,
+            cosine_t_max=num_epochs//50
         )
     else:
         LightningBaltNet = LightningModel(

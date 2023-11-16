@@ -22,7 +22,9 @@ from glob import glob
 from tqdm import tqdm
 
 from .convLSTM import ConvLSTM
-from .sharedUtilities import read_netcdfs, preprocess, plot_loss_and_acc
+from .sharedUtilities import EnhancedMSELoss, EnhancedMSEMetric
+from .sharedUtilities import PredictionPlottingCallback
+
 
 # %% ../nbs/02_BaltNet.ipynb 4
 class BaltNet(nn.Module):
@@ -134,14 +136,15 @@ class LightningModel(L.LightningModule):
         self.learning_rate = learning_rate
         self.model = model
         self.cosine_t_max = cosine_t_max
+        self.loss_function = EnhancedMSELoss(alpha=3)
 
         # Save hyperparameters except the model
         self.save_hyperparameters(ignore=["model"])
 
         # Define metrics
-        self.train_mse = torchmetrics.MeanSquaredError()
-        self.val_mse = torchmetrics.MeanSquaredError()
-        self.test_mse = torchmetrics.MeanSquaredError()
+        self.train_mse = EnhancedMSEMetric(alpha=3)
+        self.val_mse = EnhancedMSEMetric(alpha=3)
+        self.test_mse = EnhancedMSEMetric(alpha=3)
 
     def forward(self, x):
         """Defines the forward pass of the model."""
@@ -160,7 +163,7 @@ class LightningModel(L.LightningModule):
         """
         features, true_labels = batch
         logits = self.model(features)
-        loss = F.mse_loss(logits, true_labels)
+        loss = self.loss_function(logits, true_labels)
         if debug:
             print(loss)
         return loss, true_labels, logits
@@ -243,7 +246,7 @@ class AtmosphericDataset(Dataset):
 
 # %% ../nbs/02_BaltNet.ipynb 13
 class AtmosphereDataModule(L.LightningDataModule):
-    
+
     def __init__(self, atmosphericData, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
         super().__init__()
 
@@ -253,20 +256,24 @@ class AtmosphereDataModule(L.LightningDataModule):
         self.num_workers = num_workers
         self.add_first_dim = add_first_dim
         self.input_size = input_size
-    
+
     def setup(self, stage:str):
+
         UserWarning("Loading atmospheric data ...")
         dataset = AtmosphericDataset(
             atmosphericData=self.data,
             runoff=self.runoff,
             input_size=self.input_size
             )
+        
         n_samples = len(dataset)
-        train_size = int(0.85 * n_samples)
-        val_size = n_samples - train_size
-        # self.train, self.val = train_test_split(dataset)
-        self.train, self.val, = random_split(dataset, [train_size, val_size])
 
+        train_size = int(0.8 * n_samples)  
+        val_size = int(0.1 * n_samples)   
+        test_size = n_samples - train_size - val_size  
+        self.train, self.val, self.test = random_split(dataset, [train_size, val_size, test_size])
+        self.runoffDataStats = dataset.runoffDataStats
+        
     def train_dataloader(self):
         return DataLoader(
             dataset=self.train,
@@ -276,7 +283,7 @@ class AtmosphereDataModule(L.LightningDataModule):
             num_workers=self.num_workers,
             pin_memory=False  # Speed up data transfer to GPU
         )
-    
+
     def val_dataloader(self):
         return DataLoader(
             dataset=self.val,
@@ -286,3 +293,14 @@ class AtmosphereDataModule(L.LightningDataModule):
             drop_last=True,
             pin_memory=False  # Speed up data transfer to GPU
         )
+
+    def test_dataloader(self):
+        return DataLoader(
+            dataset=self.test,
+            batch_size=self.batch_size,
+            shuffle=False,
+            num_workers=self.num_workers,
+            drop_last=True,
+            pin_memory=False  # Speed up data transfer to GPU
+    )
+
