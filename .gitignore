@@ -145,6 +145,8 @@ checklink/cookies.txt
 data/
 *.nc
 
+src/out
+src/figures/
 scratch/
 logs/
 src/lightning_logs
