@@ -145,7 +145,7 @@ checklink/cookies.txt
 data/
 *.nc
 
-src/out
+src/out*
 src/figures/
 scratch/
 logs/
