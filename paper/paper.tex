@@ -4,9 +4,7 @@
 \PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
 %
 \documentclass[
-  letterpaper,
-  DIV=11,
-  numbers=noendperiod]{scrartcl}
+]{agujournal2019}
 
 \usepackage{amsmath,amssymb}
 \usepackage{lmodern}
@@ -38,7 +36,7 @@
 \makeatother
 \usepackage{xcolor}
 \setlength{\emergencystretch}{3em} % prevent overfull lines
-\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\setcounter{secnumdepth}{5}
 % Make \paragraph and \subparagraph free-standing
 \ifx\paragraph\undefined\else
   \let\oldparagraph\paragraph
@@ -98,7 +96,11 @@
 \newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
-\KOMAoption{captions}{tableheading}
+\usepackage{url} %this package should fix any errors with URLs in refs.
+\usepackage{lineno}
+\usepackage[inline]{trackchanges} %for better track changes. finalnew option will compile document with changes incorporated.
+\usepackage{soul}
+\linenumbers
 \makeatletter
 \makeatother
 \makeatletter
@@ -166,53 +168,93 @@
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\title{Preparing your manuscript}
-\author{Florian Börgel \and Sven Karsten}
-\date{9/29/23}
+\journalname{Geophysical Research Letters}
+
+\draftfalse
 
 \begin{document}
-\maketitle
+\title{Preparing your manuscript}
+
+\authors{Florian Börgel\affil{1}, Sven Karsten\affil{1}}
+\affiliation{1}{Leibniz-Institute for Baltic Sea Research Warnemünde, }
+\correspondingauthor{Florian Börgel}{florian.boergel@io-warnemuende.de}
+
+
 \begin{abstract}
 The abstract (1) states the nature of the investigation and (2)
 summarizes the important conclusions. The abstract should be suitable
 for indexing. Your abstract should:
 \end{abstract}
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, enhanced, frame hidden, borderline west={3pt}{0pt}{shadecolor}, interior hidden, boxrule=0pt, sharp corners]}{\end{tcolorbox}}\fi
+
+\section*{Plain Language Summary}
+A Plain Language Summary (PLS) can be an incredibly effective science
+communication tool. By summarizing your paper in non-technical terms,
+you can explain your research and its relevance to a much broader
+audience. A PLS is required for submissions to AGU Advances, G-Cubed,
+GeoHealth, GRL, JAMES, JGR: Biogeosciences, JGR: Oceans, JGR: Planets,
+JGR: Solid Earth, JGR: Atmospheres, Space Weather, and Reviews of
+Geophysics, but optional for other journals. A PLS should be no longer
+than 200 words and should be free of jargon, acronyms, equations, and
+any technical information that would be unknown to people from outside
+your scientific discipline. Read our tips for creating an effective PLS.
+
+
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, sharp corners, interior hidden, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, frame hidden, breakable]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
-\subsection{Introduction}\label{introduction}}
+\section{Introduction}\label{introduction}}
 
 River runoff is an important component of the global water cycle as it
-comprises about one third of the precipitation over land areas
-(Hagemann, 2020). Moreover, accurate runoff forecasting, especially over
-extended periods, is pivotal for effective water resources management,
-as highlighted by studies such as Yang et al.~(2018), Tan et al.~(2018),
-and Fang et al.~(2019).
+comprises about one third of the precipitation over land areas (Hagemann
+et al., 2020). For the Baltic Sea river runoff is even more important,
+as the Baltic Sea is nearly decoupled from the open ocean (see Figure).
+As a consequence, the salinity of the Baltic Sea is driven to a large
+part by freshwater supply from rivers. More generally, the freshwater
+input into the Baltic Sea comes either as river runoff or a positive net
+precipitation (precipitation minus evaporation) over the sea surface.
+The net precipitation accounts for 11 \% and the river input for 89 \%
+of the total freshwater input (Meier and Doescher, 2002). Modeling the
+Baltic Sea is therefore to a large part the result of the quality of the
+river input, that is used for the simulation.
 
-Over the past decades, models for long-term runoff forecasting have been
-primarily bifurcated into physically based models and data-based models.
-While the former attempts to emulate intricate and nonlinear physical
-hydrological processes, the latter hinges on establishing statistical
-models that delineate the relationship between large-scale climate
-patterns and catchment runoff.
+In the context of climate change studies, river runoff is usually
+generated in two ways. First, river runoff as input for ocean models can
+be created using hyrdological models such as the Hydrological Discharge
+(HD) model (Hagemann et al., 2020). HD calculates the water balance
+using hydrological processes (e.g.~snow, glaciers, soil moisture,
+groundwater contribution). It represents a complex forecast tool that
+uses underlying physical processes. A different approach would use
+data-based models that intergrate statistical correction, using the land
+surface schemes of global or regional climate models.
 
-Machine Learning (ML) models, such as those employing artificial neural
-networks, support vector machines, adaptive neuro-fuzzy inference
-systems, and notably, Long Short-Term Memory (LSTM) neural networks,
-have gained traction for long-term hydrological forecasting due to their
-commendable performance (Humphrey et al 2016, Huang et al 2014, Ashrafi
-et al 2017, Yuan et al 2018, Xu et al 2021).
+The releatively recent rise of machine learning (ML) models has been
+mostly explored for river runoff forcasting, as accurate runoff
+forecasting, especially over extended periods, is pivotal for effective
+water resources management (Fang et al., 2019; Tan et al., 2018; Yang et
+al., 2018). Common approach us employ artificial neural networks,
+support vector machines, adaptive neuro-fuzzy inference systems, and
+notably, Long Short-Term Memory (LSTM) neural networks and have gained
+traction for long-term hydrological forecasting due to their commendable
+performance (Humphrey et al 2016, Huang et al 2014, Ashrafi et al 2017,
+Yuan et al 2018, Xu et al 2021).
 
 LSTM networks, an evolution of the classical Recurrent Neural Networks
 (RNNs), have shown stability and efficacy in sequence-to-sequence
 predictions, such as using climatic indices for rainfall estimation or
 long-term hydrological forecasting. However, a limitation of LSTMs is
 their inability to effectively capture two-dimensional structures, an
-area where Convolutional Neural Networks (CNNs) excel. Recognizing this,
-we introduce the ConvLSTM, which integrates the strengths of both LSTM
-and CNN, to extract spatiotemporal features from precipitation fields
-for predicting river runoff in the Baltic Sea catchment, summarized by
-97 inidivual rivers.
+area where Convolutional Neural Networks (CNNs) excel.
+
+Recognizing this, we use the ConvLSTM, which integrates the strengths of
+both LSTM and CNN, to extract spatiotemporal features from atmospheric
+fields for predicting river runoff in the Baltic Sea catchment,
+summarized by 97 inidivual rivers.
+
+Following the previous description of the complex hyrdological model
+E-Hype - when present E-Hype should be used. However, in absence of a
+fully functioning hydrogolocial model, that also uses a rather complex
+parametrization, RNNs represent a robust way to predict river runoff for
+any give period of time using atmospheric forcing.
 
 Modeling the Baltic Sea is to a large part the result of the quality of
 the freshwater input, that is used for the simulation. Meier and
@@ -230,10 +272,10 @@ spatiotemporal sequence forecasting challenge, highlighting its
 advantages and potential future applications.
 
 \hypertarget{methods}{%
-\subsection{Methods}\label{methods}}
+\section{Methods}\label{methods}}
 
 \hypertarget{lstm-network}{%
-\subsubsection{LSTM network}\label{lstm-network}}
+\subsection{LSTM network}\label{lstm-network}}
 
 The Long Short-Term Memory (LSTM), a specialized form of Recurrent
 Neural Networks (RNNs), is specifically tailored for modeling temporal
@@ -299,18 +341,15 @@ with
   \(W\) and \(b\): Weight matrices and bias vectors, respectively,
   associated with the gates of the LSTM. The subscripts denote the
   specific gate or operation they are associated with (e.g., \(W_f\) and
-  \(b_f\) are the weight matrix and bias for the forget gate,
-  respectively).
+  \(b_f\) are the weight matrix and bias for the forget gate).
 \item
-  \(\sigma\): Sigmoid activation function, which squashes values between
-  0 and 1.
+  \(\sigma\): Sigmoid activation function (\(0,\ldots 1\))
 \item
-  \(\tanh\): Hyperbolic tangent activation function, which squashes
-  values between -1 and 1
+  \(\tanh\): Hyperbolic tangent activation function (\$-1 \ldots1)
 \end{itemize}
 
 \hypertarget{convlstm-network}{%
-\subsubsection{ConvLSTM network}\label{convlstm-network}}
+\subsection{ConvLSTM network}\label{convlstm-network}}
 
 The FC-LSTM fails to handle information when handling spatiotemporal
 data due to its reliance on full connections in both input-to-state and
@@ -346,13 +385,25 @@ Neural Networks (CNNs) with the time-series modeling of Long Short-Term
 Memory (LSTM) networks.
 
 \hypertarget{implemented-model-architecture}{%
-\subsubsection{Implemented model
+\subsection{Implemented model
 architecture}\label{implemented-model-architecture}}
 
 We first implemented the ConvLSTM using and encoder/decoder structure as
 discussed in \ldots{} . To predict all 97 rivers entering the Baltic Sea
 at once, we flatten the output and use fully connected layers resulting
 in 97 outputs.
+
+An overview of the model structure is given below
+
+\begin{figure}
+
+{\centering \includegraphics{model_structure.png}
+
+}
+
+\caption{\label{fig-baltNet}BaltConvLSTM}
+
+\end{figure}
 
 For the computation we use the following set of hyper parameters:
 
@@ -367,16 +418,18 @@ Parameter name & Parameter size \\
 Parameter name & Parameter size \\
 \midrule()
 \endhead
-Num. timesteps & 32 \\
-Conv. Kernelsize & (7,7) \\
-Num. ConvLSTM layers & 4 \\
-Batch size & 32 \\
-~Learning Rate & 1e-4 with CosineAnnealing \\
+Channel size & 4 \\
+Num. hidden layer & 10 \\
+Num. timesteps & 30 \\
+Conv. Kernelsize & (9,9) \\
+Num. ConvLSTM layers & 1 \\
+Batch size & 64 \\
+~Learning Rate & 1e-3 with CosineAnnealing \\
 \bottomrule()
 \end{longtable}
 
 \hypertarget{acknowledgments}{%
-\subsection{Acknowledgments}\label{acknowledgments}}
+\section{Acknowledgments}\label{acknowledgments}}
 
 Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
 fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
@@ -385,7 +438,7 @@ Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
 fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
 
 \hypertarget{open-research}{%
-\subsection{Open research}\label{open-research}}
+\section{Open research}\label{open-research}}
 
 Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
 fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
@@ -394,11 +447,40 @@ Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
 fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
 
 \hypertarget{references}{%
-\subsection*{References}\label{references}}
-\addcontentsline{toc}{subsection}{References}
+\section*{References}\label{references}}
+\addcontentsline{toc}{section}{References}
 
 \hypertarget{refs}{}
-\begin{CSLReferences}{0}{0}
+\begin{CSLReferences}{1}{0}
+\vspace{1em}
+
+\leavevmode\vadjust pre{\hypertarget{ref-fangExaminingApplicabilityDifferent2019}{}}%
+Fang, W., Huang, S., Ren, K., Huang, Q., Huang, G., Cheng, G., \& Li, K.
+(2019). Examining the applicability of different sampling techniques in
+the development of decomposition-based streamflow forecasting models.
+\emph{Journal of Hydrology}, \emph{568}, 534--550.
+\url{https://doi.org/10.1016/j.jhydrol.2018.11.020}
+
+\leavevmode\vadjust pre{\hypertarget{ref-hagemannHighResolutionDischarge2020}{}}%
+Hagemann, S., Stacke, T., \& Ho-Hagemann, H. T. M. (2020). High
+{Resolution Discharge Simulations Over Europe} and the {Baltic Sea
+Catchment}. \emph{Frontiers in Earth Science}, \emph{8}.
+\url{https://doi.org/10.3389/feart.2020.00012}
+
+\leavevmode\vadjust pre{\hypertarget{ref-tanAdaptiveMiddleLongterm2018}{}}%
+Tan, Q.-F., Lei, X.-H., Wang, X., Wang, H., Wen, X., Ji, Y., \& Kang,
+A.-Q. (2018). An adaptive middle and long-term runoff forecast model
+using {EEMD-ANN} hybrid approach. \emph{Journal of Hydrology},
+\emph{567}, 767--780.
+\url{https://doi.org/10.1016/j.jhydrol.2018.01.015}
+
+\leavevmode\vadjust pre{\hypertarget{ref-yangDerivingOperatingRules2018}{}}%
+Yang, Z., Liu, P., Cheng, L., Wang, H., Ming, B., \& Gong, W. (2018).
+Deriving operating rules for a large-scale hydro-photovoltaic power
+system using implicit stochastic optimization. \emph{Journal of Cleaner
+Production}, \emph{195}, 562--572.
+\url{https://doi.org/10.1016/j.jclepro.2018.05.154}
+
 \end{CSLReferences}
 
 

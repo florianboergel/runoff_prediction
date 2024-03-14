@@ -1,0 +1,23 @@
+digraph {
+	Input [label="Input Layer"]
+	Encoder [label="ConvLSTM Encoder"]
+	Decoder [label="ConvLSTM Decoder"]
+	Attention [label="Spatial Attention"]
+	Flatten [label="Flatten Output"]
+	FC1 [label="Fully Connected Layer 1"]
+	ReLU1 [label="ReLU Activation 1"]
+	FC2 [label="Fully Connected Layer 2"]
+	ReLU2 [label="ReLU Activation 2"]
+	FC3 [label="Fully Connected Layer 3"]
+	Output [label="Output Layer"]
+	Input -> Encoder
+	Encoder -> Decoder
+	Decoder -> Attention
+	Attention -> Flatten
+	Flatten -> FC1
+	FC1 -> ReLU1
+	ReLU1 -> FC2
+	FC2 -> ReLU2
+	ReLU2 -> FC3
+	FC3 -> Output
+}

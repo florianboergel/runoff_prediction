@@ -40,18 +40,27 @@ date: last-modified
 ---
 ## Introduction
 
-River runoff is an important component of the global water cycle as it comprises about one third of the precipitation over land areas (Hagemann, 2020). Moreover, accurate runoff forecasting, especially over extended periods, is pivotal for effective water resources management, as highlighted by studies such as Yang et al. (2018), Tan et al. (2018), and Fang et al. (2019). 
+River runoff is an important component of the global water cycle as it comprises about one third of the precipitation over land areas [@hagemannHighResolutionDischarge2020]. For the Baltic Sea river runoff is even more important, as the Baltic Sea is nearly decoupled from the open ocean (see Figure). As a consequence, the salinity of the Baltic Sea is driven to a large part by freshwater supply from rivers. More generally, the freshwater input into the Baltic Sea comes either as river runoff or a positive net precipitation (precipitation minus evaporation) over the sea surface. The net precipitation accounts for 11 \% and the river input for 89 \% of the total freshwater input (Meier and Doescher, 2002). Modeling the Baltic Sea is therefore to a large part the result of the quality of the river input, that is used for the simulation.
 
-Over the past decades, models for long-term runoff forecasting have been primarily bifurcated into physically based models and data-based models. While the former attempts to emulate intricate and nonlinear physical hydrological processes, the latter hinges on establishing statistical models that delineate the relationship between large-scale climate patterns and catchment runoff.
+In the context of climate change studies, river runoff is usually generated in two ways. First, river runoff as input for ocean models can be created using hyrdological models such as the Hydrological Discharge (HD) model [@hagemannHighResolutionDischarge2020]. HD calculates the water balance using hydrological processes (e.g. snow, glaciers, soil moisture, groundwater contribution). It represents a complex forecast tool that uses underlying physical processes. A different approach would use data-based models that intergrate statistical correction, using the land surface schemes of global or regional climate models. 
 
-Machine Learning (ML) models, such as those employing artificial neural networks, support vector machines, adaptive neuro-fuzzy inference systems, and notably, Long Short-Term Memory (LSTM) neural networks, have gained traction for long-term hydrological forecasting due to their commendable performance (Humphrey et al 2016, Huang et al 2014, Ashrafi et al 2017, Yuan et al 2018, Xu et al 2021). 
+The releatively recent rise of machine learning (ML) models has been mostly explored for river runoff forcasting, as accurate runoff forecasting, especially over extended periods, is pivotal for effective water resources management [@fangExaminingApplicabilityDifferent2019;@tanAdaptiveMiddleLongterm2018;@yangDerivingOperatingRules2018]. Common approach us employ artificial neural networks, support vector machines, adaptive neuro-fuzzy inference systems, and notably, Long Short-Term Memory (LSTM) neural networks and have gained traction for long-term hydrological forecasting due to their commendable performance (Humphrey et al 2016, Huang et al 2014, Ashrafi et al 2017, Yuan et al 2018, Xu et al 2021). 
 
-LSTM networks, an evolution of the classical Recurrent Neural Networks (RNNs), have shown stability and efficacy in sequence-to-sequence predictions, such as using climatic indices for rainfall estimation or long-term hydrological forecasting. However, a limitation of LSTMs is their inability to effectively capture two-dimensional structures, an area where Convolutional Neural Networks (CNNs) excel. Recognizing this, we introduce the ConvLSTM, which integrates the strengths of both LSTM and CNN, to extract spatiotemporal features from precipitation fields for predicting river runoff in the Baltic Sea catchment, summarized by 97 inidivual rivers. 
+LSTM networks, an evolution of the classical Recurrent Neural Networks (RNNs), have shown stability and efficacy in sequence-to-sequence predictions, such as using climatic indices for rainfall estimation or long-term hydrological forecasting. However, a limitation of LSTMs is their inability to effectively capture two-dimensional structures, an area where Convolutional Neural Networks (CNNs) excel. 
+
+Recognizing this, we use the ConvLSTM, which integrates the strengths of both LSTM and CNN, to extract spatiotemporal features from atmospheric fields for predicting river runoff in the Baltic Sea catchment, summarized by 97 inidivual rivers. 
+
+Following the previous description of the complex hyrdological model E-Hype - when present E-Hype should be used. However, in absence of a fully functioning hydrogolocial model, that also uses a rather complex parametrization, RNNs represent a robust way to predict river runoff for any give period of time using atmospheric forcing. 
+
+
+
+
+
+
 
 Modeling the Baltic Sea is to a large part the result of the quality of the freshwater input, that is used for the simulation. Meier and Kauker(2003) showed that decadal salinity variations of about 1 $g$ $kg^{-1}$ are caused, inter alia, by annual runoff variations. Further, Meier and Kauker (2003) showed that about 50 \% of the decadal salinity variability can be explained by variations in freshwater input into the Baltic Sea. 
 
 This paper delves into the application of deep learning, particularly ConvLSTM, to the challenging task of precipitation nowcasting, a domain yet to fully harness the potential of advanced machine learning techniques. We present ConvLSTM as a novel solution to this spatiotemporal sequence forecasting challenge, highlighting its advantages and potential future applications.
-
 
 
 ## Methods 
@@ -81,14 +90,15 @@ with
 - $x_t$: Input vector at time step $t$.
 - $h_{t-1}$: Hidden state from the previous time step.
 - $C_{t-1}$: Cell state from the previous time step.
-- $W$ and $b$: Weight matrices and bias vectors, respectively, associated with the gates of the LSTM. The subscripts denote the specific gate or operation they are associated with (e.g., $W_f$ and $b_f$ are the weight matrix and bias for the forget gate, respectively).
-- $\sigma$: Sigmoid activation function, which squashes values between 0 and 1.
-- $\tanh$: Hyperbolic tangent activation function, which squashes values between -1 and 1
+- $W$ and $b$: Weight matrices and bias vectors, respectively, associated with the gates of the LSTM. The subscripts denote the specific gate or operation they are associated with (e.g., $W_f$ and $b_f$ are the weight matrix and bias for the forget gate).
+- $\sigma$: Sigmoid activation function ($0,\ldots 1$)
+- $\tanh$: Hyperbolic tangent activation function ($ -1 \ldots 1$)
 
 
 ### ConvLSTM network
 
 The FC-LSTM fails to handle information when handling spatiotemporal data due to its reliance on full connections in both input-to-state and state-to-state transitions. To adress this limitation we use a convLSTM architecture. convLSTM replaces the fully connected operations in the LSTM with convolutional operations. Hence, all inputs $X_1, \ldots, X_t$, cell outputs $C_1, \ldots, C_t$, hidden states $H_1, \ldots, H_t$, and gates $i_t, f_t, o_t$ of the ConvLSTM are 3D tensors. The last two dimensions of these tensors represent spatial dimensions, specifically rows and columns. Conceptually, these inputs and states can be visualized as vectors positioned on a spatial grid.
+
 
 In the ConvLSTM, the future state of a specific cell on this grid is determined by the inputs and past states of its neighboring cells. This spatial consideration is integrated by employing a convolution operator in both state-to-state and input-to-state transitions, as illustrated in Fig. 2. The foundational equations for ConvLSTM are:
 
@@ -108,15 +118,21 @@ In summary, the ConvLSTM excels at processing tasks that demand a combined under
 
 We first implemented the ConvLSTM using and encoder/decoder structure as discussed in ... . To predict all 97 rivers entering the Baltic Sea at once, we flatten the output and use fully connected layers resulting in 97 outputs. 
 
+An overview of the model structure is given below
+
+![BaltConvLSTM](model_structure.png){#fig-baltNet}
+
 For the computation we use the following set of hyper parameters:
 
 | Parameter name | Parameter size | 
 |------|------|
-| Num. timesteps     | 32    |
-| Conv. Kernelsize    | (7,7)    |
-| Num. ConvLSTM layers    | 4    |
-| Batch size| 32 |
-| Learning Rate | 1e-4 with CosineAnnealing |
+| Channel size | 4 |
+| Num. hidden layer |10 |
+| Num. timesteps     | 30    |
+| Conv. Kernelsize    | (9,9)    |
+| Num. ConvLSTM layers    | 1    |
+| Batch size| 64 |
+| Learning Rate | 1e-3 with CosineAnnealing |
 
 : Hyperparameters {#tbl-letters}
 
