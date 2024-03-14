@@ -1,2 +1,3 @@
-cosine_t_max: 40
-learning_rate: 1.0e-06
+alpha: 3
+cosine_t_max: 100
+learning_rate: 0.001

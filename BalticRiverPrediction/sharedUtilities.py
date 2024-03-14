@@ -16,6 +16,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchmetrics import Metric
 import matplotlib.pyplot as plt
+import lightning as L
 
 # %% ../nbs/03_shared_utilities.ipynb 3
 def preprocess(ds):

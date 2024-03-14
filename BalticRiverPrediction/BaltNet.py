@@ -122,7 +122,7 @@ class LightningModel(L.LightningModule):
         test_mse (torchmetrics.MeanSquaredError): Metric for testing mean squared error.
     """
     
-    def __init__(self, model, learning_rate, cosine_t_max):
+    def __init__(self, model, learning_rate, cosine_t_max, alpha=4):
         """
         Initializes the LightningModel.
 
@@ -136,15 +136,15 @@ class LightningModel(L.LightningModule):
         self.learning_rate = learning_rate
         self.model = model
         self.cosine_t_max = cosine_t_max
-        self.loss_function = EnhancedMSELoss(alpha=3)
+        self.loss_function = EnhancedMSELoss(alpha=alpha)
 
         # Save hyperparameters except the model
         self.save_hyperparameters(ignore=["model"])
 
         # Define metrics
-        self.train_mse = EnhancedMSEMetric(alpha=3)
-        self.val_mse = EnhancedMSEMetric(alpha=3)
-        self.test_mse = EnhancedMSEMetric(alpha=3)
+        self.train_mse = EnhancedMSEMetric(alpha=alpha)
+        self.val_mse = EnhancedMSEMetric(alpha=alpha)
+        self.test_mse = EnhancedMSEMetric(alpha=alpha)
 
     def forward(self, x):
         """Defines the forward pass of the model."""
@@ -189,7 +189,8 @@ class LightningModel(L.LightningModule):
         mse = self.test_mse(predicted_labels, true_labels)
         self.log("test_loss", loss, rank_zero_only=True)
         self.log("test_mse", mse, sync_dist=True)
-        return loss
+        #return loss
+        return predicted_labels
     
     def predict_step(self, batch, batch_idx: int, dataloader_idx: int = 0):
         """Prediction step."""
@@ -265,13 +266,13 @@ class AtmosphereDataModule(L.LightningDataModule):
             runoff=self.runoff,
             input_size=self.input_size
             )
-        
         n_samples = len(dataset)
-
         train_size = int(0.8 * n_samples)  
         val_size = int(0.1 * n_samples)   
         test_size = n_samples - train_size - val_size  
-        self.train, self.val, self.test = random_split(dataset, [train_size, val_size, test_size])
+
+        generator1 = torch.Generator().manual_seed(42)
+        self.train, self.val, self.test = random_split(dataset, [train_size, val_size, test_size], generator=generator1)
         self.runoffDataStats = dataset.runoffDataStats
         
     def train_dataloader(self):
