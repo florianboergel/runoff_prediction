@@ -199,7 +199,7 @@ any technical information that would be unknown to people from outside
 your scientific discipline. Read our tips for creating an effective PLS.
 
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[enhanced, sharp corners, interior hidden, boxrule=0pt, borderline west={3pt}{0pt}{shadecolor}, frame hidden, breakable]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, frame hidden, breakable, interior hidden, boxrule=0pt, sharp corners, enhanced]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
@@ -285,7 +285,7 @@ accuracy (see Figure~\ref{fig-lstm}).
 
 \begin{figure}
 
-{\centering \includegraphics{draw_lstm.pdf}
+{\centering \includegraphics{draw_lstm.png}
 
 }
 
@@ -345,7 +345,7 @@ with
 \item
   \(\sigma\): Sigmoid activation function (\(0,\ldots 1\))
 \item
-  \(\tanh\): Hyperbolic tangent activation function (\$-1 \ldots1)
+  \(\tanh\): Hyperbolic tangent activation function (\$ -1 \ldots 1\$)
 \end{itemize}
 
 \hypertarget{convlstm-network}{%
@@ -388,10 +388,10 @@ Memory (LSTM) networks.
 \subsection{Implemented model
 architecture}\label{implemented-model-architecture}}
 
-We first implemented the ConvLSTM using and encoder/decoder structure as
-discussed in \ldots{} . To predict all 97 rivers entering the Baltic Sea
-at once, we flatten the output and use fully connected layers resulting
-in 97 outputs.
+The ConvLSTM architectures uses and encoder/decoder structure as
+discussed in TODO. To predict all 97 rivers entering the Baltic Sea, we
+flatten the output and use fully connected layers to map onto the
+individual rivers outputs.
 
 An overview of the model structure is given below
 
@@ -427,6 +427,73 @@ Batch size & 64 \\
 ~Learning Rate & 1e-3 with CosineAnnealing \\
 \bottomrule()
 \end{longtable}
+
+As input the model receives 30 days of atmospheric surface fields
+temperature \(T\), precipitation \(P\), specific humidity \(Q\) and wind
+speed \(W\), with a daily resolution to predict the river runoff \(R\)
+at the time step \(\Delta t+1\) , which can be summarized as
+
+\(R_{\Delta t+1} = f\left(T_{t-30:t}, P_{t-30:t}, Q_{t-30:t}, W_{t-30:t}\right)\)
+
+with f being a function maps the 30 days of daily atmospheric surface
+fields data to the predicted river runoff.
+
+The choice of atmospheric fields was based on the implemented river
+runoff calculation in the atmospheric model COSMO-CLM which uses these
+four fields to calculate an river runoff estimate.
+
+\hypertarget{results}{%
+\section{Results}\label{results}}
+
+For the evaluation of the model performance we consider the period 1979
+to 2011. For this period no bias correction was applied to the orignal
+E-HYPE dataset. We chose a split of 80\% training data, 10\% validation
+data to evaluate the performance of the model during training, and 10\%
+training data that is finally used to evaluate the performance of the
+model after training.
+
+Figure~\ref{fig-PerformanceNeuralNetworkRunoff} shows the perfomance of
+the model using the test dataset. The predicted total river runoff for
+the Baltic Sea is closely matching the original data. Zooming in on the
+largest individual rivers (lower panels) it can be seen that that also
+the prediction of the inidivual rivers is close to the original data.
+
+\begin{figure}
+
+{\centering \includegraphics{images/paste-1.png}
+
+}
+
+\caption{\label{fig-PerformanceNeuralNetworkRunoff}Figure ..}
+
+\end{figure}
+
+The accuracy of the model is further displayed in
+Figure~\ref{fig-statistical-evaluationNN} . The correlation is close to
+1 and the residuals show the error of the model is below 1\% of the
+original data.
+
+\begin{figure}
+
+{\centering \includegraphics{images/paste-4.png}
+
+}
+
+\caption{\label{fig-statistical-evaluationNN}Figure \ldots{}}
+
+\end{figure}
+
+Lastly, we evaluated the performance of the runoff model by
+incorporating the predicted river runoff as forcing into the ocean model
+MOM5. This provides a robust validation of the runoff model against more
+complex real world conditions. This allows us to ensure that the
+predictions accurately reflect the impact of the river discharge on the
+ocean dynamics, validating the temporal and spatial variability of the
+the river discharge. \textbf{?@fig-by15} shows the salinity comparison
+between the original E-HYPE river runoff and the predicted river runoff
+at BY15 - a central stations in the Baltic Sea.
+
+\includegraphics{images/paste-5.png}
 
 \hypertarget{acknowledgments}{%
 \section{Acknowledgments}\label{acknowledgments}}
