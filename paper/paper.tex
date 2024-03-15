@@ -159,7 +159,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={Preparing your manuscript},
+  pdftitle={From Precipitation to Prediction: Integrating ConvLSTM Models for Comprehensive River Runoff Forecasting},
   pdfauthor={Florian Börgel; Sven Karsten},
   colorlinks=true,
   linkcolor={blue},
@@ -168,12 +168,13 @@
   urlcolor={Blue},
   pdfcreator={LaTeX via pandoc}}
 
-\journalname{Geophysical Research Letters}
+\journalname{Climate Dynamics}
 
 \draftfalse
 
 \begin{document}
-\title{Preparing your manuscript}
+\title{From Precipitation to Prediction: Integrating ConvLSTM Models for
+Comprehensive River Runoff Forecasting}
 
 \authors{Florian Börgel\affil{1}, Sven Karsten\affil{1}}
 \affiliation{1}{Leibniz-Institute for Baltic Sea Research Warnemünde, }
@@ -181,60 +182,38 @@
 
 
 \begin{abstract}
-The abstract (1) states the nature of the investigation and (2)
-summarizes the important conclusions. The abstract should be suitable
-for indexing. Your abstract should:
+a
 \end{abstract}
 
 \section*{Plain Language Summary}
-A Plain Language Summary (PLS) can be an incredibly effective science
-communication tool. By summarizing your paper in non-technical terms,
-you can explain your research and its relevance to a much broader
-audience. A PLS is required for submissions to AGU Advances, G-Cubed,
-GeoHealth, GRL, JAMES, JGR: Biogeosciences, JGR: Oceans, JGR: Planets,
-JGR: Solid Earth, JGR: Atmospheres, Space Weather, and Reviews of
-Geophysics, but optional for other journals. A PLS should be no longer
-than 200 words and should be free of jargon, acronyms, equations, and
-any technical information that would be unknown to people from outside
-your scientific discipline. Read our tips for creating an effective PLS.
+b
 
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, frame hidden, breakable, interior hidden, boxrule=0pt, sharp corners, enhanced]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, frame hidden, enhanced, borderline west={3pt}{0pt}{shadecolor}, breakable, boxrule=0pt, sharp corners]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
 
 River runoff is an important component of the global water cycle as it
 comprises about one third of the precipitation over land areas (Hagemann
-et al., 2020). For the Baltic Sea river runoff is even more important,
-as the Baltic Sea is nearly decoupled from the open ocean (see Figure).
-As a consequence, the salinity of the Baltic Sea is driven to a large
-part by freshwater supply from rivers. More generally, the freshwater
-input into the Baltic Sea comes either as river runoff or a positive net
-precipitation (precipitation minus evaporation) over the sea surface.
-The net precipitation accounts for 11 \% and the river input for 89 \%
-of the total freshwater input (Meier and Doescher, 2002). Modeling the
-Baltic Sea is therefore to a large part the result of the quality of the
-river input, that is used for the simulation.
-
-In the context of climate change studies, river runoff is usually
-generated in two ways. First, river runoff as input for ocean models can
-be created using hyrdological models such as the Hydrological Discharge
-(HD) model (Hagemann et al., 2020). HD calculates the water balance
-using hydrological processes (e.g.~snow, glaciers, soil moisture,
-groundwater contribution). It represents a complex forecast tool that
-uses underlying physical processes. A different approach would use
-data-based models that intergrate statistical correction, using the land
-surface schemes of global or regional climate models.
+et al., 2020). In the context of climate change studies, river runoff is
+usually generated in two ways. First, river runoff as input for ocean
+models can be created using hyrdological models such as the Hydrological
+Discharge (HD) model (Hagemann et al., 2020). HD models calculates the
+water balance using hydrological processes (e.g.~snow, glaciers, soil
+moisture, groundwater contribution). It represents a complex forecasting
+tool that uses underlying physical processes. A different approach would
+use data-based models that intergrate statistical correction, using the
+land surface schemes of global or regional climate models.
 
 The releatively recent rise of machine learning (ML) models has been
-mostly explored for river runoff forcasting, as accurate runoff
+mostly explored for river runoff forecasting, as accurate runoff
 forecasting, especially over extended periods, is pivotal for effective
 water resources management (Fang et al., 2019; Tan et al., 2018; Yang et
-al., 2018). Common approach us employ artificial neural networks,
-support vector machines, adaptive neuro-fuzzy inference systems, and
-notably, Long Short-Term Memory (LSTM) neural networks and have gained
-traction for long-term hydrological forecasting due to their commendable
+al., 2018). Common approaches employ artificial neural networks, support
+vector machines, adaptive neuro-fuzzy inference systems, and notably,
+Long Short-Term Memory (LSTM) neural networks that have gained traction
+for long-term hydrological forecasting due to their excellent
 performance (Humphrey et al 2016, Huang et al 2014, Ashrafi et al 2017,
 Yuan et al 2018, Xu et al 2021).
 
@@ -243,36 +222,45 @@ LSTM networks, an evolution of the classical Recurrent Neural Networks
 predictions, such as using climatic indices for rainfall estimation or
 long-term hydrological forecasting. However, a limitation of LSTMs is
 their inability to effectively capture two-dimensional structures, an
-area where Convolutional Neural Networks (CNNs) excel.
+area where Convolutional Neural Networks (CNNs) excel. Reconizing this
+limitation (SHI et al., 2015) proposed a convolutional LSTM (ConvLSTM)
+architectures, which combines the strengths of both LSTM and CNN. The
+ConvLSTM network has been proven useful for precipitation nowcasting
+(SHI et al., 2015) or for river runoff forecasting {[}Ha et al. (2021);
+@niu2020{]}.
 
-Recognizing this, we use the ConvLSTM, which integrates the strengths of
-both LSTM and CNN, to extract spatiotemporal features from atmospheric
-fields for predicting river runoff in the Baltic Sea catchment,
-summarized by 97 inidivual rivers.
+In the following we will show that in absence of a fully functioning
+hydrogolocial model, that also uses a rather complex parametrization,
+ConvLSTM also represent a robust way to predict multiple rivers at once
+for any given period using only atmospheric forcing. In this work we use
+the Baltic Sea catchment to illustrate our approach, while in principal
+the methodology we propose is universally applicable across various
+geographic regions. The Baltic Sea serves as a challenging example due
+to its unique hydrological characteristics, being nearly decoupled from
+the open ocean (see Figure). As a consequence, the salinity of the
+Baltic Sea is driven to a large part by freshwater supply from rivers.
+More generally, the freshwater input into the Baltic Sea comes either as
+river runoff or a positive net precipitation (precipitation minus
+evaporation) over the sea surface. The net precipitation accounts for 11
+\% and the river input for 89 \% of the total freshwater input (Meier
+and Doescher, 2002). Modeling the Baltic Sea is therefore to a large
+part the result of the quality of the river input, that is used for the
+simulation. This makes the accurate modeling of river runoff especially
+critical for simulations pertaining to the Baltic Sea.
 
-Following the previous description of the complex hyrdological model
-E-Hype - when present E-Hype should be used. However, in absence of a
-fully functioning hydrogolocial model, that also uses a rather complex
-parametrization, RNNs represent a robust way to predict river runoff for
-any give period of time using atmospheric forcing.
-
-Modeling the Baltic Sea is to a large part the result of the quality of
-the freshwater input, that is used for the simulation. Meier and
-Kauker(2003) showed that decadal salinity variations of about 1 \(g\)
-\(kg^{-1}\) are caused, inter alia, by annual runoff variations.
-Further, Meier and Kauker (2003) showed that about 50 \% of the decadal
-salinity variability can be explained by variations in freshwater input
-into the Baltic Sea.
-
-This paper delves into the application of deep learning, particularly
-ConvLSTM, to the challenging task of precipitation nowcasting, a domain
-yet to fully harness the potential of advanced machine learning
-techniques. We present ConvLSTM as a novel solution to this
-spatiotemporal sequence forecasting challenge, highlighting its
-advantages and potential future applications.
+In this work we will, we present a ConvLSTM architecture that is able to
+predict daily river runoff for 97 rivers across the Baltic Sea
+catchment.
 
 \hypertarget{methods}{%
 \section{Methods}\label{methods}}
+
+\hypertarget{runoff-data-used-for-training}{%
+\subsection{Runoff data used for
+training}\label{runoff-data-used-for-training}}
+
+\hypertarget{atmospheric-forcing}{%
+\subsection{Atmospheric Forcing}\label{atmospheric-forcing}}
 
 \hypertarget{lstm-network}{%
 \subsection{LSTM network}\label{lstm-network}}
@@ -528,11 +516,24 @@ the development of decomposition-based streamflow forecasting models.
 \emph{Journal of Hydrology}, \emph{568}, 534--550.
 \url{https://doi.org/10.1016/j.jhydrol.2018.11.020}
 
+\leavevmode\vadjust pre{\hypertarget{ref-ha2021}{}}%
+Ha, S., Liu, D., \& Mu, L. (2021). Prediction of Yangtze River
+streamflow based on deep learning neural network with El
+Niño{\textendash}Southern Oscillation. \emph{Scientific Reports},
+\emph{11}(1), 11738. \url{https://doi.org/10.1038/s41598-021-90964-3}
+
 \leavevmode\vadjust pre{\hypertarget{ref-hagemannHighResolutionDischarge2020}{}}%
 Hagemann, S., Stacke, T., \& Ho-Hagemann, H. T. M. (2020). High
 {Resolution Discharge Simulations Over Europe} and the {Baltic Sea
 Catchment}. \emph{Frontiers in Earth Science}, \emph{8}.
 \url{https://doi.org/10.3389/feart.2020.00012}
+
+\leavevmode\vadjust pre{\hypertarget{ref-shi2015}{}}%
+SHI, X., Chen, Z., Wang, H., Yeung, D.-Y., Wong, W., \& WOO, W. (2015).
+Convolutional LSTM network: A machine learning approach for
+precipitation nowcasting. In (Vol. 28). Curran Associates, Inc.
+Retrieved from
+\url{https://proceedings.neurips.cc/paper/2015/hash/07563a3fe3bbe7e3ba84431ad9d055af-Abstract.html}
 
 \leavevmode\vadjust pre{\hypertarget{ref-tanAdaptiveMiddleLongterm2018}{}}%
 Tan, Q.-F., Lei, X.-H., Wang, X., Wang, H., Wen, X., Ji, Y., \& Kang,

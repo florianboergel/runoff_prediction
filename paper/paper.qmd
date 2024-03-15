@@ -1,5 +1,5 @@
 ---
-title: "Preparing your manuscript"
+title: "From Precipitation to Prediction: Integrating ConvLSTM Models for Comprehensive River Runoff Forecasting"
 format:
     agu-pdf:
         keep-tex: true
@@ -23,10 +23,9 @@ affiliations:
     name: Leibniz-Institute for Baltic Sea Research Warnemünde
 
 abstract: |
-  The abstract (1) states the nature of the investigation and (2) summarizes the important conclusions. The abstract should be suitable for indexing. Your abstract should:
-
+    a
 plain-language-summary: |
-  A Plain Language Summary (PLS) can be an incredibly effective science communication tool. By summarizing your paper in non-technical terms, you can explain your research and its relevance to a much broader audience. A PLS is required for submissions to AGU Advances, G-Cubed, GeoHealth, GRL, JAMES, JGR: Biogeosciences, JGR: Oceans, JGR: Planets, JGR: Solid Earth, JGR: Atmospheres, Space Weather, and Reviews of Geophysics, but optional for other journals.  A PLS should be no longer than 200 words and should be free of jargon, acronyms, equations, and any technical information that would be unknown to people from outside your scientific discipline. Read our tips for creating an effective PLS.
+    b
 keywords: []
 key-points:
   - Key Points convey the main points and conclusions of the article. 
@@ -34,7 +33,7 @@ key-points:
   - Key Points are not included in the word count.
 bibliography: bibliography.bib  
 citation:
-  container-title: Geophysical Research Letters
+  container-title: Climate Dynamics
 keep-tex: true
 date: last-modified
 ---
@@ -45,17 +44,17 @@ River runoff is an important component of the global water cycle as it comprises
 
 The releatively recent rise of machine learning (ML) models has been mostly explored for river runoff forecasting, as accurate runoff forecasting, especially over extended periods, is pivotal for effective water resources management [@fangExaminingApplicabilityDifferent2019; @tanAdaptiveMiddleLongterm2018; @yangDerivingOperatingRules2018]. Common approaches employ artificial neural networks, support vector machines, adaptive neuro-fuzzy inference systems, and notably, Long Short-Term Memory (LSTM) neural networks that have gained traction for long-term hydrological forecasting due to their excellent performance (Humphrey et al 2016, Huang et al 2014, Ashrafi et al 2017, Yuan et al 2018, Xu et al 2021).
 
-LSTM networks, an evolution of the classical Recurrent Neural Networks (RNNs), have shown stability and efficacy in sequence-to-sequence predictions, such as using climatic indices for rainfall estimation or long-term hydrological forecasting. However, a limitation of LSTMs is their inability to effectively capture two-dimensional structures, an area where Convolutional Neural Networks (CNNs) excel. Recognizing this, we use the ConvLSTM, which integrates the strengths of both LSTM and CNN, to extract spatiotemporal features from atmospheric fields for predicting river runoff.
+LSTM networks, an evolution of the classical Recurrent Neural Networks (RNNs), have shown stability and efficacy in sequence-to-sequence predictions, such as using climatic indices for rainfall estimation or long-term hydrological forecasting. However, a limitation of LSTMs is their inability to effectively capture two-dimensional structures, an area where Convolutional Neural Networks (CNNs) excel. Reconizing this limitation [@shi2015] proposed a convolutional LSTM (ConvLSTM) architectures, which combines the strengths of both LSTM and CNN. The ConvLSTM network has been proven useful for precipitation nowcasting [@shi2015] or for river runoff forecasting [@ha2021; \@niu2020].
 
-TODO: More about ConvLSTM
+In the following we will show that in absence of a fully functioning hydrogolocial model, that also uses a rather complex parametrization, ConvLSTM also represent a robust way to predict multiple rivers at once for any given period using only atmospheric forcing. In this work we use the Baltic Sea catchment to illustrate our approach, while in principal the methodology we propose is universally applicable across various geographic regions. The Baltic Sea serves as a challenging example due to its unique hydrological characteristics, being nearly decoupled from the open ocean (see Figure). As a consequence, the salinity of the Baltic Sea is driven to a large part by freshwater supply from rivers. More generally, the freshwater input into the Baltic Sea comes either as river runoff or a positive net precipitation (precipitation minus evaporation) over the sea surface. The net precipitation accounts for 11 % and the river input for 89 % of the total freshwater input (Meier and Doescher, 2002). Modeling the Baltic Sea is therefore to a large part the result of the quality of the river input, that is used for the simulation. This makes the accurate modeling of river runoff especially critical for simulations pertaining to the Baltic Sea.
 
-In the following we will use the Baltic Sea catchment to illustrate our approach, while in principal the methodology we propose is universally applicable across various geographic regions. The Baltic Sea serves as a challenging example due to its unique hydrological characteristics, being nearly decoupled from the open ocean (see Figure).
-
-As a consequence, the salinity of the Baltic Sea is driven to a large part by freshwater supply from rivers. More generally, the freshwater input into the Baltic Sea comes either as river runoff or a positive net precipitation (precipitation minus evaporation) over the sea surface. The net precipitation accounts for 11 % and the river input for 89 % of the total freshwater input (Meier and Doescher, 2002). Modeling the Baltic Sea is therefore to a large part the result of the quality of the river input, that is used for the simulation. This makes the accurate modeling of river runoff especially critical for simulations pertaining to the Baltic Sea. In the following we show that in absence of a fully functioning hydrogolocial model, that also uses a rather complex parametrization, ConvLSTM represent a robust way to predict river runoff for any given period of time using only atmospheric forcing.
-
-In this work, we present a ConvLSTM architecture as a novel solution to this spatiotemporal sequence forecasting challenge, highlighting its advantages and potential future applications.
+In this work we will, we present a ConvLSTM architecture that is able to predict daily river runoff for 97 rivers across the Baltic Sea catchment.
 
 ## Methods
+
+### Runoff data used for training
+
+### Atmospheric Forcing
 
 ### LSTM network
 
