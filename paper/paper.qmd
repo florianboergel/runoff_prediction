@@ -54,7 +54,15 @@ In this work we will, we present a ConvLSTM architecture that is able to predict
 
 ### Runoff data used for training
 
+The runoff data covering the period 1979 to 2011 is based on an E-HYPE hindcast simulation that was forced by a regional downscaling of ERA-Interim [@dee2011] with RCA3 [@theross] and implemented into NEMO-Nordic [@hordoir2019] as a mass flux. For the periods before (1961 to 1978) and after (2012 to 2018) additional spatial temporal corrections have been applied to the runoff data, and have therefore been ignored. For more information see @gröger2022 and references therein.
+
 ### Atmospheric Forcing
+
+The UERRA-HARMONIE regional reanalysis dataset was developed as part of the FP7 UERRA project (Uncertainties in Ensembles of Regional Re-Analyses, [http://www.uerra.eu/)](http://www.uerra.eu/),). The UERRA-HARMONIE system represents a comprehensive, high-resolution reanalysis covering a wide range of essential climate variables. This dataset encompasses data on air temperature, pressure, humidity, wind speed and direction, cloud cover, precipitation, albedo, surface heat fluxes, and radiation fluxes from January 1961 to July 2019. With a horizontal resolution of 11 km and analyses conducted at 00 UTC, 06 UTC, 12 UTC, and 18 UTC, it also provides hourly resolution forecast model data. UERRA-HARMONIE is accessible through the Copernicus Climate Data Store (CDS, <https://cds.climate.copernicus.eu/#!/home),> initially produced during the UERRA project and later transitioned to the Copernicus Climate Change Service (C3S, <https://climate.copernicus.eu/copernicus-regionalreanalysis-europe).>
+
+### Ocean Model
+
+To simulate the Baltic Sea, we use a coupled 3-dimensional ocean model Baltic Sea, called the Modular Ocean Model (MOM). This model uses a finite-difference method to solve the full set of primitive equations to calculate the motion of water and the transport of heat and salt. The K-profile parameterization (KPP) was used as turbulence closure scheme. The model's western boundary opens into the Skagerrak and connects the Baltic Sea to the North Sea. The maximum depth was set at 264 meters. A more detailed description of the setup can be found in [@gröger2022].
 
 ### LSTM network
 
@@ -148,6 +156,8 @@ The accuracy of the model is further displayed in @fig-statistical-evaluationNN 
 Lastly, we evaluated the performance of the runoff model by incorporating the predicted river runoff as forcing into the ocean model MOM5. This provides a robust validation of the runoff model against more complex real world conditions. This allows us to ensure that the predictions accurately reflect the impact of the river discharge on the ocean dynamics, validating the temporal and spatial variability of the the river discharge. @fig-by15 shows the salinity comparison between the original E-HYPE river runoff and the predicted river runoff at BY15 - a central stations in the Baltic Sea.
 
 ![](images/paste-5.png){#fig-by15}
+
+![](images/paste-6.png)
 
 ## Acknowledgments
 

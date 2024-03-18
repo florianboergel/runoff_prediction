@@ -189,7 +189,7 @@ a
 b
 
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, frame hidden, enhanced, borderline west={3pt}{0pt}{shadecolor}, breakable, boxrule=0pt, sharp corners]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[borderline west={3pt}{0pt}{shadecolor}, breakable, enhanced, interior hidden, sharp corners, frame hidden, boxrule=0pt]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
@@ -259,8 +259,46 @@ catchment.
 \subsection{Runoff data used for
 training}\label{runoff-data-used-for-training}}
 
+The runoff data covering the period 1979 to 2011 is based on an E-HYPE
+hindcast simulation that was forced by a regional downscaling of
+ERA-Interim (Dee et al., 2011) with RCA3 ({``The rossby centre regional
+climate model RCA3,''} n.d.) and implemented into NEMO-Nordic (Hordoir
+et al., 2019) as a mass flux. For the periods before (1961 to 1978) and
+after (2012 to 2018) additional spatial temporal corrections have been
+applied to the runoff data, and have therefore been ignored. For more
+information see Gröger et al. (2022) and references therein.
+
 \hypertarget{atmospheric-forcing}{%
 \subsection{Atmospheric Forcing}\label{atmospheric-forcing}}
+
+The UERRA-HARMONIE regional reanalysis dataset was developed as part of
+the FP7 UERRA project (Uncertainties in Ensembles of Regional
+Re-Analyses, \href{http://www.uerra.eu/}{http://www.uerra.eu/)},). The
+UERRA-HARMONIE system represents a comprehensive, high-resolution
+reanalysis covering a wide range of essential climate variables. This
+dataset encompasses data on air temperature, pressure, humidity, wind
+speed and direction, cloud cover, precipitation, albedo, surface heat
+fluxes, and radiation fluxes from January 1961 to July 2019. With a
+horizontal resolution of 11 km and analyses conducted at 00 UTC, 06 UTC,
+12 UTC, and 18 UTC, it also provides hourly resolution forecast model
+data. UERRA-HARMONIE is accessible through the Copernicus Climate Data
+Store (CDS, \url{https://cds.climate.copernicus.eu/\#!/home),} initially
+produced during the UERRA project and later transitioned to the
+Copernicus Climate Change Service (C3S,
+\url{https://climate.copernicus.eu/copernicus-regionalreanalysis-europe).}
+
+\hypertarget{ocean-model}{%
+\subsection{Ocean Model}\label{ocean-model}}
+
+To simulate the Baltic Sea, we use a coupled 3-dimensional ocean model
+Baltic Sea, called the Modular Ocean Model (MOM). This model uses a
+finite-difference method to solve the full set of primitive equations to
+calculate the motion of water and the transport of heat and salt. The
+K-profile parameterization (KPP) was used as turbulence closure scheme.
+The model's western boundary opens into the Skagerrak and connects the
+Baltic Sea to the North Sea. The maximum depth was set at 264 meters. A
+more detailed description of the setup can be found in (Gröger et al.,
+2022).
 
 \hypertarget{lstm-network}{%
 \subsection{LSTM network}\label{lstm-network}}
@@ -483,6 +521,8 @@ at BY15 - a central stations in the Baltic Sea.
 
 \includegraphics{images/paste-5.png}
 
+\includegraphics{images/paste-6.png}
+
 \hypertarget{acknowledgments}{%
 \section{Acknowledgments}\label{acknowledgments}}
 
@@ -509,12 +549,26 @@ fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
 \begin{CSLReferences}{1}{0}
 \vspace{1em}
 
+\leavevmode\vadjust pre{\hypertarget{ref-dee2011}{}}%
+Dee, D. P., Uppala, S. M., Simmons, A. J., Berrisford, P., Poli, P.,
+Kobayashi, S., et al. (2011). The ERA-Interim reanalysis: configuration
+and performance of the data assimilation system. \emph{Quarterly Journal
+of the Royal Meteorological Society}, \emph{137}(656), 553--597.
+\url{https://doi.org/10.1002/qj.828}
+
 \leavevmode\vadjust pre{\hypertarget{ref-fangExaminingApplicabilityDifferent2019}{}}%
 Fang, W., Huang, S., Ren, K., Huang, Q., Huang, G., Cheng, G., \& Li, K.
 (2019). Examining the applicability of different sampling techniques in
 the development of decomposition-based streamflow forecasting models.
 \emph{Journal of Hydrology}, \emph{568}, 534--550.
 \url{https://doi.org/10.1016/j.jhydrol.2018.11.020}
+
+\leavevmode\vadjust pre{\hypertarget{ref-gruxf6ger2022}{}}%
+Gröger, M., Placke, M., Meier, M., Börgel, F., Brunnabend, S.-E.,
+Dutheil, C., et al. (2022). \emph{The Baltic Sea model inter-comparison
+project BMIP {\textendash} a platform for model development, evaluation,
+and uncertainty assessment}. Retrieved from
+\url{https://gmd.copernicus.org/preprints/gmd-2022-160/}
 
 \leavevmode\vadjust pre{\hypertarget{ref-ha2021}{}}%
 Ha, S., Liu, D., \& Mu, L. (2021). Prediction of Yangtze River
@@ -527,6 +581,13 @@ Hagemann, S., Stacke, T., \& Ho-Hagemann, H. T. M. (2020). High
 {Resolution Discharge Simulations Over Europe} and the {Baltic Sea
 Catchment}. \emph{Frontiers in Earth Science}, \emph{8}.
 \url{https://doi.org/10.3389/feart.2020.00012}
+
+\leavevmode\vadjust pre{\hypertarget{ref-hordoir2019}{}}%
+Hordoir, R., Axell, L., Höglund, A., Dieterich, C., Fransner, F.,
+Gröger, M., et al. (2019). Nemo-nordic 1.0: A NEMO-based ocean model for
+the baltic and north seas {\textendash} research and operational
+applications. \emph{Geoscientific Model Development}, \emph{12}(1),
+363--386. \url{https://doi.org/10.5194/gmd-12-363-2019}
 
 \leavevmode\vadjust pre{\hypertarget{ref-shi2015}{}}%
 SHI, X., Chen, Z., Wang, H., Yeung, D.-Y., Wong, W., \& WOO, W. (2015).
@@ -541,6 +602,12 @@ A.-Q. (2018). An adaptive middle and long-term runoff forecast model
 using {EEMD-ANN} hybrid approach. \emph{Journal of Hydrology},
 \emph{567}, 767--780.
 \url{https://doi.org/10.1016/j.jhydrol.2018.01.015}
+
+\leavevmode\vadjust pre{\hypertarget{ref-theross}{}}%
+The rossby centre regional climate model RCA3: Model description and
+performance - tellus a: Dynamic meteorology and oceanography. (n.d.).
+Retrieved from
+\url{https://a.tellusjournals.se/articles/10.1111/j.1600-0870.2010.00478.x}
 
 \leavevmode\vadjust pre{\hypertarget{ref-yangDerivingOperatingRules2018}{}}%
 Yang, Z., Liu, P., Cheng, L., Wang, H., Ming, B., \& Gong, W. (2018).
