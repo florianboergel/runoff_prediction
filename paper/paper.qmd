@@ -1,4 +1,5 @@
 ---
+git pul---
 title: "From Precipitation to Prediction: Integrating ConvLSTM Models for Comprehensive River Runoff Forecasting"
 format:
     agu-pdf:
@@ -145,19 +146,21 @@ The choice of atmospheric fields was based on the implemented river runoff calcu
 
 For the evaluation of the model performance we consider the period 1979 to 2011. For this period no bias correction was applied to the orignal E-HYPE dataset. We chose a split of 80% training data, 10% validation data to evaluate the performance of the model during training, and 10% training data that is finally used to evaluate the performance of the model after training.
 
-@fig-PerformanceNeuralNetworkRunoff shows the perfomance of the model using the test dataset. The predicted total river runoff for the Baltic Sea is closely matching the original data. Zooming in on the largest individual rivers (lower panels) it can be seen that that also the prediction of the inidivual rivers is close to the original data.
-
-![Figure ..](images/paste-1.png){#fig-PerformanceNeuralNetworkRunoff}
-
 The accuracy of the model is further displayed in @fig-statistical-evaluationNN . The correlation is close to 1 and the residuals show the error of the model is below 1% of the original data.
 
-![Figure ...](images/paste-4.png){#fig-statistical-evaluationNN}
+![](images/paste-13.png)
+
+@fig-PerformanceNeuralNetworkRunoff shows the performance of the model using the test dataset. The predicted total river runoff for the Baltic Sea is closely matching the original data. Zooming in on the largest individual rivers (lower panels) it can be seen that that also the prediction of the inidivual rivers is close to the original data.
+
+![](images/paper_total_river_runoff.png)
 
 Lastly, we evaluated the performance of the runoff model by incorporating the predicted river runoff as forcing into the ocean model MOM5. This provides a robust validation of the runoff model against more complex real world conditions. This allows us to ensure that the predictions accurately reflect the impact of the river discharge on the ocean dynamics, validating the temporal and spatial variability of the the river discharge. @fig-by15 shows the salinity comparison between the original E-HYPE river runoff and the predicted river runoff at BY15 - a central stations in the Baltic Sea.
 
-![](images/paste-7.png)
+![](images/paste-9.png)
 
-## ![](images/paste-8.png)Acknowledgments
+![](images/paste-12.png)
+
+## Acknowledgments
 
 Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt. Vivamus eget rutrum purus. Etiam et pretium justo. Donec et egestas sem. Donec molestie ex sit amet viverra egestas. Nullam justo nulla, fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
 
