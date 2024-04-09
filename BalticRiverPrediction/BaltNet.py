@@ -68,22 +68,22 @@ class BaltNet(nn.Module):
         )
 
         # Creating separate attention weights for each river
-        self.attention_weights = nn.Parameter(torch.randn(self.hidden_dim, 1, 1), requires_grad=True)  # 97 rivers
+        # self.attention_weights = nn.Parameter(torch.randn(self.hidden_dim, 1, 1), requires_grad=True)  # 97 rivers
 
-    def spatial_attention(self, x):
-        """Spatial attention mechanism."""
-        B, T, C, H, W = x.size()
+    # def spatial_attention(self, x):
+    #     """Spatial attention mechanism."""
+    #     B, T, C, H, W = x.size()
 
-        x = x.view(B * T, C, H, W)
+    #     x = x.view(B * T, C, H, W)
         
-        # Apply attention weights for all rivers
-        self.attention_map = torch.sigmoid(F.conv2d(x, self.attention_weights.unsqueeze(0), bias=None, stride=1, padding=0))
+    #     # Apply attention weights for all rivers
+    #     self.attention_map = torch.sigmoid(F.conv2d(x, self.attention_weights.unsqueeze(0), bias=None, stride=1, padding=0))
         
-        # Weighted sum
-        output = x * self.attention_map  # B*T, C, H, W
-        output = output.view(B, T, C, H, W)  # B, T, C
+    #     # Weighted sum
+    #     output = x * self.attention_map  # B*T, C, H, W
+    #     output = output.view(B, T, C, H, W)  # B, T, C
 
-        return output
+    #     return output
 
     def forward(self, x):
         B, _, _, _, _ = x.size()
@@ -98,10 +98,10 @@ class BaltNet(nn.Module):
         decoder_outputs, _ = self.decoder(decoder_input, encoder_hidden)
 
         # Apply spatial attention
-        decoder_with_spatial_attention = self.spatial_attention(decoder_outputs[0])  # B, T, C, H, W
+        # decoder_with_spatial_attention = self.spatial_attention(decoder_outputs[0])  # B, T, C, H, W
             
         # Flatten the temporal sequence
-        decoder_with_spatial_attention_flattened = decoder_with_spatial_attention.view(B, -1)  #
+        decoder_with_spatial_attention_flattened = decoder_outputs[0].view(B, -1)  #
             
         # Pass through its own predictor
         output = self.river_predictors(decoder_with_spatial_attention_flattened)  # B, -1
