@@ -1,5 +1,4 @@
 ---
-git pul---
 title: "From Precipitation to Prediction: Integrating ConvLSTM Models for Comprehensive River Runoff Forecasting"
 format:
     agu-pdf:
