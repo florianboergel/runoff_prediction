@@ -35,21 +35,11 @@ class BaltNet(nn.Module):
         for k, v in modelPar.items():
             setattr(self, k, v)
 
-        self.encoder = ConvLSTM(
+        self.convLSTM = ConvLSTM(
             input_dim=self.input_dim,
             hidden_dim=self.hidden_dim,
             kernel_size=self.kernel_size,
             num_layers=self.num_layers,
-            batch_first=self.batch_first,
-            bias=self.bias,
-            return_all_layers=False
-        )
-
-        self.decoder = ConvLSTM(
-            input_dim=self.hidden_dim,
-            hidden_dim=self.hidden_dim,
-            kernel_size=self.kernel_size,
-            num_layers=1,
             batch_first=self.batch_first,
             bias=self.bias,
             return_all_layers=False
@@ -67,48 +57,21 @@ class BaltNet(nn.Module):
             nn.Linear(256, 97)
         )
 
-        # Creating separate attention weights for each river
-        # self.attention_weights = nn.Parameter(torch.randn(self.hidden_dim, 1, 1), requires_grad=True)  # 97 rivers
-
-    # def spatial_attention(self, x):
-    #     """Spatial attention mechanism."""
-    #     B, T, C, H, W = x.size()
-
-    #     x = x.view(B * T, C, H, W)
-        
-    #     # Apply attention weights for all rivers
-    #     self.attention_map = torch.sigmoid(F.conv2d(x, self.attention_weights.unsqueeze(0), bias=None, stride=1, padding=0))
-        
-    #     # Weighted sum
-    #     output = x * self.attention_map  # B*T, C, H, W
-    #     output = output.view(B, T, C, H, W)  # B, T, C
-
-    #     return output
-
     def forward(self, x):
         B, _, _, _, _ = x.size()
 
-        # Pass through encoder
-        encoder_outputs, encoder_hidden = self.encoder(x)
+        # Pass through convLSTM 
+        convLSTM_outputs, _ = self.convLSTM(x)
 
-        # Use the entire encoder output as input to the decoder
-        decoder_input = encoder_outputs[0][:,-1,:,:,:].unsqueeze(1)
-
-        # Pass through decoder using the final hidden state of the encoder
-        decoder_outputs, _ = self.decoder(decoder_input, encoder_hidden)
-
-        # Apply spatial attention
-        # decoder_with_spatial_attention = self.spatial_attention(decoder_outputs[0])  # B, T, C, H, W
-            
-        # Flatten the temporal sequence
-        decoder_with_spatial_attention_flattened = decoder_outputs[0].view(B, -1)  #
+        # After that the output will be flattened for the FC - Layer
+        convLSTM_lasthidden_flattened = convLSTM_outputs[0][:,-1,:,:,:].view(B, -1)  #
             
         # Pass through its own predictor
-        output = self.river_predictors(decoder_with_spatial_attention_flattened)  # B, -1
+        output = self.river_predictors(convLSTM_lasthidden_flattened)  # B, -1
 
         return output
 
-# %% ../nbs/02_BaltNet.ipynb 8
+# %% ../nbs/02_BaltNet.ipynb 7
 class LightningModel(L.LightningModule):
     """
     A PyTorch Lightning model for training and evaluation.
@@ -208,7 +171,7 @@ class LightningModel(L.LightningModule):
         sch = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', factor=0.1, patience=10, verbose=False)
         return {"optimizer": opt, "lr_scheduler": sch, "monitor": "val_mse"}
 
-# %% ../nbs/02_BaltNet.ipynb 11
+# %% ../nbs/02_BaltNet.ipynb 10
 class AtmosphericDataset(Dataset):
     def __init__(self, input_size, atmosphericData, runoff, transform=None):
 
@@ -245,7 +208,7 @@ class AtmosphericDataset(Dataset):
     def __len__(self):
         return self.y.shape[0]-(self.input_size)
 
-# %% ../nbs/02_BaltNet.ipynb 13
+# %% ../nbs/02_BaltNet.ipynb 12
 class AtmosphereDataModule(L.LightningDataModule):
 
     def __init__(self, atmosphericData, runoff, batch_size=64, num_workers=8, add_first_dim=True, input_size=30):
