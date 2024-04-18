@@ -1,5 +1,4 @@
 ---
-git pul---
 title: "From Precipitation to Prediction: Integrating ConvLSTM Models for Comprehensive River Runoff Forecasting"
 format:
     agu-pdf:
@@ -18,6 +17,11 @@ author:
       - ref: IOW
     orcid: 0000-0001-8715-9476
     email: sven.karsten@io-warnemuende.de
+
+  - name: Karoline Rummel
+    affiliations:
+      - ref: IOW
+    email: karoline.rummel@io-warnemuende.de    
 
 affiliations:
   - id: IOW
@@ -67,48 +71,78 @@ To simulate the Baltic Sea, we use a coupled 3-dimensional ocean model Baltic Se
 
 ### LSTM network
 
-The Long Short-Term Memory (LSTM), a specialized form of Recurrent Neural Networks (RNNs), is specifically tailored for modeling temporal sequences. Its unique design allows it to adeptly handle long-range dependencies, setting it apart from traditional RNNs in terms of accuracy (see @fig-lstm).
+Before turning to the convolutional LSTM, the simpler architecture of the plain LSTM is examined and should serve as a role model for the later consideration of the full ConvLSTM.
+
+The Long Short-Term Memory (LSTM), a specialized form of Recurrent Neural Networks (RNNs), is specifically tailored for modeling temporal sequences $\vec{X}^t[1], \ldots \vec{X}^t[\tau],\ldots \vec{X}^t[N_\tau]$ of $N_\tau$ input quantities $\vec{X}^t[\tau] = (X^t_k[\tau]) \in \mathbb{R}^{N_k}$. The sequence is taken from a dataset given in form of a time series $\{\vec{X}^t\}$ and the endpoint should coincide with the specific element in the time series connected to time $t$, i.e. $\vec{X}^t[N_\tau] \equiv \vec{X}^t$. The $N_k$ is the number of used input "channels" and can, for example, represent different measurable quantities. Its unique design allows it to adeptly handle long-range dependencies, setting it apart from traditional RNNs in terms of accuracy (see @fig-lstm).
 
 ![Inner structure of a Long Short-Term Memory Cell](draw_lstm.png){#fig-lstm fig-align="center"}
 
-This performance in modeling long-range dependencies has been validated in various studies. The key component of LSTM's innovation is its memory cell, $c_t$t, which stores state information, also refered to as long-term memory. This cell is accessed, modified, and reset through several self-parameterized gates. For the input of the sequence $x_t$ input, the forget gate $f_t$ defines the percentage of the previous long-term memory status $c_{t-1}$ that should be retained stored​. Next the input gate $i_t$ decides how much of the input is added to the the long-term memory, forming the updated cell state $c_{t}$. The decision to propagate the latest cell output, $c_t$, to the final state, $h_t$, is governed by the output gate, $o_t$, representing the updated short-term memory of the hidden state $h_t$. A significant advantage of this architecture is the memory cell's ability to retain gradients. This mechanism addresses the vanishing gradient problem, where, as input sequences elongate, the influence of initial stages becomes harder to capture, causing gradients of early input points to approach zero. The LSTM's activation function, inherently recurrent, mirrors the identity function with a consistent derivative of 1.0, ensuring the gradient remains stable throughout backpropagation.
+This performance in modeling long-range dependencies has been validated in various studies. The key component of LSTM's innovation is its memory cell, $\vec{C}^t[\tau] = (C^t_h[\tau]) \in \mathbb{R}^{N_h}$, which stores state information, also referred to as long-term memory. The index $\tau \in [1, N_\tau]$ corresponds to the $\tau$-th element in the input sequence. The cell state is a vector consists of elements, each associated with one of the $N_h$ hidden layers, labeled by $h$. This vector is determined through several self-parameterized gates, all in the same vector space as $\vec{C}^t[\tau]$. The forget gate $\vec{F}^t[\tau]$ defines the percentage of the previous long-term memory status $\vec{C}^t[\tau-1]$ that should be retained stored​. The input gate $\vec{I}^t[\tau]$ decides how much of the input is added to the the long-term memory, forming the updated cell state. The so-called output gate $\vec{O}^t[\tau]$ then determines how much of the latest cell output, $\vec{C}^t[\tau]$, is propagated to the final state, $\vec{H}^t[\tau]$ representing the updated short-term memory of the hidden state.
 
-One LSTM cell hence maybe expressed as:
-
-$$
+For a fixed point $\tau$ in the sequence, the action of a LSTM cell, i.e. the connection between the input $\vec{X}^t[\tau]$, the various gates and the state vectors, is given as follows. First, the elements of the input sequence together with the hidden state are mapped onto auxiliary gate vectors, collectively denoted by $\vec{g}^t[\tau] = (g^t_h[\tau]) \in \mathbb{R}^{N_h}$, via $$
 \begin{aligned}
-i_t &= \sigma(W_{xi} x_t + W_{hi} h_{t-1} + W_{ci} \circ c_{t-1} + b_i) \\
-f_t &= \sigma(W_{xf} x_t + W_{hf} h_{t-1} + W_{cf} \circ c_{t-1} + b_f) \\
-c_t &= f_t \circ c_{t-1} + i_t \circ \tanh(W_{xc} x_t + W_{hc} h_{t-1} + b_c) \\
-o_t &= \sigma(W_{xo} x_t + W_{ho} h_{t-1} + W_{co} \circ c_t + b_o) \\
-h_t &= o_t \circ \tanh(c_t)
+g_h^t[\tau] =  \mathcal{M}^{g}_{hk} \, X^t_k[\tau] +  \mathcal{N}^{g}_{hh'} \, H^t_{h'}[\tau-1] + \mathcal{B}^g_{h} \ ,
 \end{aligned}
 $$
 
-with
+where $g=i,f,o,c$ stands for the input, forget, output and cell-state gate, respectively and Eistein's summation convention is employed, i.e. indices that appear twice are summed over. The calligraphic symbols $\mathcal{M}^{g}_{hk}, \mathcal{N}^{g}_{hh'}$ and $\mathcal{B}^g_{h}$ are the free parameters of the network that are optimized for the given problem during the training, which is at the heart of the any machine learning approach. The matrix $\pmb{\mathcal{M}}^{g} = (\mathcal{M}^{g}_{hk}) \in \mathbb{R}^{N_h \times N_k}$ can be interpreted as a Markovian-like contribution of the current input $\vec{X}^t[\tau]$ to the gates, whereas the $\pmb{\mathcal{N}}^{g} = (\mathcal{N}^{g}_{hh'}) \in \mathbb{R}^{N_h \times N_h}$ scales a non-Markovian part determined by the hidden state of the last sequence point $\tau-1$. The vector $\vec{\mathcal{B}}^g = (\mathcal{B}^g_{h}) \in \mathbb{R}^{N_h}$ is a learnable bias. It should be stressed that these parameters do neither depend on $t$ nor on $\tau$ and are thus optimized once for the complete dataset $\{\vec{X}^t\}$.
 
--   $x_t$: Input vector at time step $t$.
--   $h_{t-1}$: Hidden state from the previous time step.
--   $C_{t-1}$: Cell state from the previous time step.
--   $W$ and $b$: Weight matrices and bias vectors, respectively, associated with the gates of the LSTM. The subscripts denote the specific gate or operation they are associated with (e.g., $W_f$ and $b_f$ are the weight matrix and bias for the forget gate).
--   $\sigma$: Sigmoid activation function ($0,\ldots 1$)
--   $\tanh$: Hyperbolic tangent activation function (\$ -1 \ldots 1\$)
+Note that this mapping is sometimes extended by a contribution to the $g_h^t[\tau]$ from the past cell state $\vec{C}^t[\tau-1]$ [@XXX]. Nevertheless, this mechanism called "peeping" is not further considered in this work.
+
+For the sake of brevity, we write the mapping more compactly in matrix-vector form as $$
+\begin{aligned}
+\vec{g}^t[\tau] = \pmb{\mathcal{M}}^{g}\vec{X}^t[\tau] + \pmb{\mathcal{N}}^{g}  \vec{H}^t[ \tau-1]+ \vec{\mathcal{B}}^g \,
+\end{aligned}
+$$ {#eq-LSTM-gates}
+
+Second, the actual gate vectors are computed by the core equations of the LSTM as proposed by [@XXX]:
+
+$$
+\begin{aligned}
+\vec{I}^t[\tau] &= \sigma(\vec{i}^t[\tau]) \\
+\vec{F}^t[\tau] &= \sigma(\vec{f}^t[\tau]) \\
+\vec{O}^t[\tau] &= \sigma(\vec{o}^t[\tau]) \\
+\vec{C}^t[\tau] &= \vec{F}^t[\tau] \circ \vec{C}^t[\tau-1]  + \vec{I}^t[\tau] \circ \tanh(\vec{c}^t[\tau]) \\
+\vec{H}^t[\tau]  &= \vec{O}^t[\tau] \circ \tanh(\vec{C}^t[\tau]) \ ,
+\end{aligned}
+$$ {#eq-LSTM}
+
+where $\sigma$ denotes the logisitc sigmoid function, $\tanh$ is the hyperbolic tangent and the $\circ$ stands for the Hadamard product (all applied in an element-wise fashion to the vectors). In the last two equations the role of the input, forget and output gates as described above become apparent.
+
+The third step in a single layer LSTM (as employed for the work presented here) is then to provide the output of the current LSTM cell, i.e. $\vec{H}^t[\tau]$ and $\vec{C}^t[\tau]$, to the subsequent LSTM cell that processes the next element $\vec{X}^t[\tau+1]$ of the input sequence.
+
+The full action of the LSTM network up to the end of the sequence can therefore be written as a nested function call
+
+$$
+\left(\vec{H}^t[N_\tau], \vec{C}^t[N_\tau] \right) = L \left( \vec{X}^t[N_\tau], L \left( \vec{X}^t[N_\tau-1], \ldots L \left( \vec{X}^t[1], (\vec{H}^t[0], \vec{C}^t[0] \right) \ldots \right) \right) \ ,
+$$
+
+where $L$ represents Eqs. (@eq-LSTM-gates, @eq-LSTM) and the initial conditions are usually chosen as $\vec{H}^t[0]=\vec{C}^t[0]=0$.
+
+The final output $\vec{H}^t[N_\tau]$ and $\vec{C}^t[N_\tau]$ encode information on the full input sequence ending at time $t$. This information has to be decoded to obtain usueful information via an appropriate subsequent layer, as it is described in the Sec. @XXX.
+
+A significant advantage of this architecture is the memory cell's ability to retain gradients. This mechanism addresses the vanishing gradient problem, where, as input sequences elongate, the influence of initial stages becomes harder to capture, causing gradients of early input points to approach zero. The LSTM's activation function, inherently recurrent, mirrors the identity function with a consistent derivative of 1.0, ensuring the gradient remains stable throughout backpropagation.
 
 ### ConvLSTM network
 
-The FC-LSTM fails to handle information when handling spatiotemporal data due to its reliance on full connections in both input-to-state and state-to-state transitions. To adress this limitation we use a convLSTM architecture. convLSTM replaces the fully connected operations in the LSTM with convolutional operations. Hence, all inputs $X_1, \ldots, X_t$, cell outputs $C_1, \ldots, C_t$, hidden states $H_1, \ldots, H_t$, and gates $i_t, f_t, o_t$ of the ConvLSTM are 3D tensors. The last two dimensions of these tensors represent spatial dimensions, specifically rows and columns. Conceptually, these inputs and states can be visualized as vectors positioned on a spatial grid.
+Although the plain LSTM has high performance in handling temporal sequences of point-like quantities it is not designed to recognize spatial features in seuqences of two-dimensional maps. To adress this limitation we use a convLSTM architecture.
 
-In the ConvLSTM, the future state of a specific cell on this grid is determined by the inputs and past states of its neighboring cells. This spatial consideration is integrated by employing a convolution operator in both state-to-state and input-to-state transitions, as illustrated in Fig. 2. The foundational equations for ConvLSTM are:
+In this kind of network the elements of the input sequence are given as (kind of) vector fields $\vec{X}^t[\tau] = (X^t_k[x,y,\tau]) \in \mathbb{R}^{N_k \times (N_x \times N_y)}$, where $x\in[1, N_x]$ and $y \in [1, N_y]$ run over the horizontal and vertical dimensions of the map, respectively. In order to enable the "learning" of spatial patterns, the free parameters of the network are replaced by two-dimenmsional convolutional kernels $\pmb{\mathcal{M}}^{g} = (\mathcal{M}^{g}_{hk}[\xi, \eta]) \in \mathbb{R}^{(N_h \times N_k)\times (N_\xi \times N_\eta)}$ and $\pmb{\mathcal{N}}^{g} = (\mathcal{N}^{g}_{hh'}[\xi, \eta]) \in \mathbb{R}^{(N_h \times N_h)\times (N_\xi \times N_\eta)}$. The width and the height of the kernels are given by $N_\xi$ and $N_\eta$, respectively and $\xi\in [-(N_\xi-1)/2,(N_\xi-1)/2], \eta\in [-(N_\eta-1)/2,(N_\eta-1)/2]$, where we assume odd numbers for the kernel sizes.
 
-$$
+The mapping from the input quantities to the gates is then given by a convolution with these kernels $$
 \begin{aligned}
-i_t &= \sigma(W_{xi} \ast X_t + W_{hi} \ast H_{t-1} + W_{ci} \circ C_{t-1} + b_i) \\
-f_t &= \sigma(W_{xf} \ast X_t + W_{hf} \ast H_{t-1} + W_{cf} \circ C_{t-1} + b_f) \\
-C_t &= f_t \circ C_{t-1} + i_t \circ \tanh(W_{xc} \ast X_t + W_{hc} \ast H_{t-1} + b_c) \\
-o_t &= \sigma(W_{xo} \ast X_t + W_{ho} \ast H_{t-1} + W_{co} \circ C_t + b_o) \\
-H_t &= o_t \circ \tanh(C_t)
+g^t_h[x,y,\tau] & =  \mathcal{M}^{g}_{hk} [\xi,\eta]\, X^t_k[x-\xi, y-\eta, \tau]  +  \mathcal{N}^{g}_{hh'}[\xi,\eta] \, H^t_{h'}[x-\xi, y-\eta, \tau-1] + \mathcal{B}^g_{h}[x,y] \ .
 \end{aligned}
 $$
+
+It becomes immediatly apparent that in case of the convLSTM, the bias, gate and state vectors must become vector fields ($\in \mathbb{R}^{N_h \times (N_x \times N_y)}$) as well. We can write this mapping in the same fashion as Eq. (@eq-LSTM-gates) but with replacing the normal matrix-vector multiplication by a convolution (denoted with $\ast$), i.e.\
+$$
+\begin{aligned}
+\vec{g}^t[\tau] = \pmb{\mathcal{M}}^{g} \ast \vec{X}^t[\tau] + \pmb{\mathcal{N}}^{g} \ast  \vec{H}^t[ \tau-1]+ \vec{\mathcal{B}}^g \,
+\end{aligned}
+$$
+
+The susebsequent processing of the $\vec{g}^t[\tau]$ remains symbolically the same as presented in Eq. (@eq-LSTM) but with all appearing quantities meaning standing now for vector fields instead of simple vectors.
 
 In summary, the ConvLSTM excels at processing tasks that demand a combined understanding of spatial patterns and temporal sequences in data. It merges the image-processing capabilities of Convolutional Neural Networks (CNNs) with the time-series modeling of Long Short-Term Memory (LSTM) networks.
 
