@@ -190,7 +190,7 @@ a
 b
 
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, boxrule=0pt, frame hidden, enhanced, borderline west={3pt}{0pt}{shadecolor}, interior hidden, sharp corners]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[frame hidden, boxrule=0pt, interior hidden, sharp corners, borderline west={3pt}{0pt}{shadecolor}, enhanced, breakable]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
@@ -475,7 +475,7 @@ g^t_h[x,y,\tau] & =  \mathcal{M}^{g}_{hk} [\xi,\eta]\, X^t_k[x-\xi, y-\eta, \tau
 \end{aligned}
 \]
 
-It becomes immediatly apparent that in case of the convLSTM, the bias,
+It becomes immediately apparent that in case of the convLSTM, the bias,
 gate and state vectors must become vector fields
 (\(\in \mathbb{R}^{N_h \times (N_x \times N_y)}\)) as well. We can write
 this mapping in the same fashion as Eq. (Equation~\ref{eq-LSTM-gates})
@@ -635,6 +635,63 @@ near a river mouth in the Gulf of Riga (22-24°E, 56.5-58.5°N for
 orientation), where the difference is approximately 1\%.
 
 \includegraphics{../src/figures/evaluation_MOM.png}
+
+\hypertarget{discussion}{%
+\section{Discussion}\label{discussion}}
+
+With the increasing demand of decision makers for regional climate
+projections, that allow to quantify regional climate change impacts, the
+availability of precise hydrological forecasting becomes invaluable. The
+quality of a projection for a coastal sea such as the Baltic Sea is too
+large parts based on the quality of the hyrdological conditions. In this
+work we analyze the implementation of Convolutional Long Short-Term
+Memory (ConvLSTM) networks for predicting river runoff, highlighting its
+potential to enhance river runoff forecasting across different coastal
+seas. Given the unique hydrological characteristics of the Baltic Sea,
+largely influenced by its limited connection to the open ocean and
+significant freshwater input from surrounding rivers, the region
+presents a critical case for the application of sophisticated
+forecasting models.
+
+The transition from traditional hydrological models to machine learning
+approaches, such as the ConvLSTM model, offers significant advantages.
+The ConvLSTM can be seamlessly integrated into regional climate models,
+allowing for the real-time computation of river runoff while performing
+climate projections. While the initial training of the model requires
+substantial computational resources, it remains less intensive than
+running comprehensive hydrological models. Furthermore, once trained,
+the ConvLSTM model is computationally efficient during inference,
+ensuring enhanced forecasting capabilities without significantly
+increasing computational demands.
+
+While the ConvLSTM represents an advancement for the climate community,
+given that running and tuning traditional hydrological models demands
+extensive expertise, models like E-HYPE maintain an essential role. They
+provide a comprehensive dataset that helps to train our ConvLSTM model
+effectively. This robust training enables the machine learning models to
+achieve highly accurate predictive weights. Thus, rather than rendering
+traditional methods obsolete, the integration of machine learning models
+builds upon and enhances the foundational data provided by them.
+
+The robust performance of the ConvLSTM model in simulating river runoff
+and its possible effective integration into regional climate models pave
+the way for a multitude of new storyline simulations. Hence, we can now
+explore various ``what-if'' scenarios more reliably, under the
+assumption that the model weights attained during training are robust.
+
+In summary, we showed that the ConvLSTM model demonstrated robust
+performance in forecasting river runoff across 97 rivers entering the
+Baltic Sea. Trained on data from 1979 to 2011, the model achieved an
+impressive daily prediction accuracy of ±5\%. This capability to
+generate accurate and detailed simulations enables to examine the
+potential impacts of different climate scenarios. Such precision in
+forecasting and scenario testing is crucial for crafting effective water
+resource management strategies and adapting to the changing climate.
+
+Ultimately, the integration of ConvLSTM into regional climate models
+represents a significant step forward in our ability to understand and
+predict the complex dynamics of river systems and their impact on
+regional climate systems.
 
 \hypertarget{acknowledgments}{%
 \section{Acknowledgments}\label{acknowledgments}}

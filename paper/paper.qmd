@@ -135,7 +135,7 @@ g^t_h[x,y,\tau] & =  \mathcal{M}^{g}_{hk} [\xi,\eta]\, X^t_k[x-\xi, y-\eta, \tau
 \end{aligned}
 $$
 
-It becomes immediatly apparent that in case of the convLSTM, the bias, gate and state vectors must become vector fields ($\in \mathbb{R}^{N_h \times (N_x \times N_y)}$) as well. We can write this mapping in the same fashion as Eq. (@eq-LSTM-gates) but with replacing the normal matrix-vector multiplication by a convolution (denoted with $\ast$), i.e.\
+It becomes immediately apparent that in case of the convLSTM, the bias, gate and state vectors must become vector fields ($\in \mathbb{R}^{N_h \times (N_x \times N_y)}$) as well. We can write this mapping in the same fashion as Eq. (@eq-LSTM-gates) but with replacing the normal matrix-vector multiplication by a convolution (denoted with $\ast$), i.e.\
 $$
 \begin{aligned}
 \vec{g}^t[\tau] = \pmb{\mathcal{M}}^{g} \ast \vec{X}^t[\tau] + \pmb{\mathcal{N}}^{g} \ast  \vec{H}^t[ \tau-1]+ \vec{\mathcal{B}}^g \,
@@ -195,6 +195,20 @@ Lastly, we evaluated the performance of the runoff model by incorporating the pr
 The final evaluation of the ConvLSTM model concentrates on the spatial accuracy of river runoff predictions. Figure xxx a) shows the vertically averaged salinity for the period 1981 to 2011 in the reference simulation. It highlights the strong horizontal gradients and complex topographic features in the Baltic Sea, as evidenced by salinity variations in deeper waters, captured by the vertical integration. Figure 4b compares these results by showing the percentage difference in vertically averaged salinity between the ConvLSTM simulation and the reference simulation. Overall, the differences remain below 1%, except near a river mouth in the Gulf of Riga (22-24°E, 56.5-58.5°N for orientation), where the difference is approximately 1%.
 
 ![](../src/figures/evaluation_MOM.png){#spatialBalticSea}
+
+## Discussion
+
+With the increasing demand of decision makers for regional climate projections, that allow to quantify regional climate change impacts, the availability of precise hydrological forecasting becomes invaluable. The quality of a projection for a coastal sea such as the Baltic Sea is too large parts based on the quality of the hyrdological conditions. In this work we analyze the implementation of Convolutional Long Short-Term Memory (ConvLSTM) networks for predicting river runoff, highlighting its potential to enhance river runoff forecasting across different coastal seas. Given the unique hydrological characteristics of the Baltic Sea, largely influenced by its limited connection to the open ocean and significant freshwater input from surrounding rivers, the region presents a critical case for the application of sophisticated forecasting models.
+
+The transition from traditional hydrological models to machine learning approaches, such as the ConvLSTM model, offers significant advantages. The ConvLSTM can be seamlessly integrated into regional climate models, allowing for the real-time computation of river runoff while performing climate projections. While the initial training of the model requires substantial computational resources, it remains less intensive than running comprehensive hydrological models. Furthermore, once trained, the ConvLSTM model is computationally efficient during inference, ensuring enhanced forecasting capabilities without significantly increasing computational demands.
+
+While the ConvLSTM represents an advancement for the climate community, given that running and tuning traditional hydrological models demands extensive expertise, models like E-HYPE maintain an essential role. They provide a comprehensive dataset that helps to train our ConvLSTM model effectively. This robust training enables the machine learning models to achieve highly accurate predictive weights. Thus, rather than rendering traditional methods obsolete, the integration of machine learning models builds upon and enhances the foundational data provided by them.
+
+The robust performance of the ConvLSTM model in simulating river runoff and its possible effective integration into regional climate models pave the way for a multitude of new storyline simulations. Hence, we can now explore various "what-if" scenarios more reliably, under the assumption that the model weights attained during training are robust.
+
+In summary, we showed that the ConvLSTM model demonstrated robust performance in forecasting river runoff across 97 rivers entering the Baltic Sea. Trained on data from 1979 to 2011, the model achieved an impressive daily prediction accuracy of ±5%. This capability to generate accurate and detailed simulations enables to examine the potential impacts of different climate scenarios. Such precision in forecasting and scenario testing is crucial for crafting effective water resource management strategies and adapting to the changing climate.
+
+Ultimately, the integration of ConvLSTM into regional climate models represents a significant step forward in our ability to understand and predict the complex dynamics of river systems and their impact on regional climate systems.
 
 ## Acknowledgments
 
