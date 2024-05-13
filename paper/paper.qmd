@@ -117,7 +117,7 @@ $$
 \left(\vec{H}^t[N_\tau], \vec{C}^t[N_\tau] \right) = L \left( \vec{X}^t[N_\tau], L \left( \vec{X}^t[N_\tau-1], \ldots L \left( \vec{X}^t[1], (\vec{H}^t[0], \vec{C}^t[0] \right) \ldots \right) \right) \ ,
 $$
 
-where $L$ represents Eqs. (@eq-LSTM-gates, @eq-LSTM) and the initial conditions are usually chosen as $\vec{H}^t[0]=\vec{C}^t[0]=0$.
+where $L\left(\vec{X}^t[\tau], \left(\vec{H}^t[\tau-1], \vec{C}^t[\tau-1] \right) \right)$ represents Eqs. (@eq-LSTM-gates, @eq-LSTM) and the initial conditions are usually chosen as $\vec{H}^t[0]=\vec{C}^t[0]=0$.
 
 The final output $\vec{H}^t[N_\tau]$ and $\vec{C}^t[N_\tau]$ encode information on the full input sequence ending at time $t$. This information has to be decoded to obtain usueful information via an appropriate subsequent layer, as it is described in the Sec. @XXX.
 
