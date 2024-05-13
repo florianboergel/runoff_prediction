@@ -151,3 +151,5 @@ src/figures/
 scratch/
 logs/
 src/lightning_logs
+
+src/figures/time_series_predictions*
