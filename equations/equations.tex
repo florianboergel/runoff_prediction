@@ -23,7 +23,7 @@
 
 \section{Runoff prediction architecture}
 
-\subsection{Encoder}
+\subsection{ConvLSTM}
 
 Input quantity $ X^t_k[x, y, \tau]$ consists of a $N_\tau$ long sequence (starting at $t-N_\tau+1$ and ending at time $t$)  of $N_k$ 2D maps with $N_x \times N_y$ pixels, i.e.
 \begin{align}
@@ -80,41 +80,16 @@ going over $\tau \in [1,N_\tau]$ with initial conditions $H_h[x,y,0,t]=0$ and $C
 The stated LSTM connections of the gates can be abbreviated by a functions $L$ that returns the hidden network state for the next iteration step
 %
 \begin{align}
-\left(\vec{H}^t[\tau], \vec{C}^t[\tau] \right) = L \left( \left\{ \vec{g}^t[\tau] \right\}, \vec{C}^t[\tau-1] \right) 
+\left(\vec{H}^t, \vec{C}^t \right) = L \left( \vec{X}^t[N_\tau], L \left( \vec{X}^t[N_\tau-1], \ldots L \left( \vec{X}^t[1], (\vec{H}^t[0], \vec{C}^t[0] \right) \ldots \right) \right) \ ,
 \end{align}
-
-\subsection{Decoder}
-
-Take last hidden state of encoder $H^t_h[x,y,N_\tau]$ and use it as input for the decoder.
-%
-Perform a single step (no iteration anymore!) with initial conditions $H^t_h[x,y,N_\tau]$ and $C^t_h[x,y,N_\tau]$, thus
-%
-\begin{align}
-\tilde{g}^t_h[x,y] & =  \tilde{\mathcal{M}}^{g}_{hh'} [\xi,\eta]\, H^t_{h'}[x-\xi, y-\eta,N_\tau] \\
-& +  \tilde{\mathcal{N}}^{g}_{hh'}[\xi,\eta] \, H^t_{h'}[x-\xi, y-\eta, N_\tau] + \tilde{\mathcal{B}}^g_{h}[x,y] \\
-& = \tilde{\mathcal{Q}}^{g}_{hh'} [\xi,\eta]\, H^t_{h'}[x-\xi, y-\eta,N_\tau] + \tilde{\mathcal{B}}^g_{h}[x,y]
-\end{align}
-%
-\begin{align}
-\tilde{I}^t_h[x,y] & = \sigma (\tilde{i}^t_h[x,y]) \\
-\tilde{F}^t_h[x,y] & = \sigma (\tilde{f}^t_h[x,y]) \\
-\tilde{O}^t_h[x,y] & = \sigma (\tilde{o}^t_h[x,y]) \\
-\tilde{C}^t_h[x,y] & = \tilde{F}^t_h[x,y,\tau] \, C^t_h[x,y,N_\tau] + \tilde{I}^t_h[x,y] \, \tanh (\tilde{c}^t_h[x,y]) \\
-\tilde{H}^t_h[x,y] & = \tilde{O}^t_h[x,y]\, \tanh(\tilde{C}^t_h[x,y])
-\end{align}
-%
-The action of the decoder can be compactly written as
-\begin{align}
-\left(\tilde{\vec{H}}^t, \tilde{\vec{C}}^t \right) = L \left( \left\{ \tilde{\vec{g}}^t \right\}, \vec{C}^t[N_\tau] \right) 
-\end{align}
-
+where $L\left(\vec{X}^t[\tau], \left(\vec{H}^t[\tau-1], \vec{C}^t[\tau-1] \right) \right)$ represents LSTM network equations and the initial conditions are chosen as $\vec{H}^t[0]=\vec{C}^t[0]=0$ and with the abbreviation for final output $\vec{H}^t[N_\tau] \equiv \vec{H}^t$ and $\vec{C}^t[N_\tau] \equiv \vec{C}^t$
 
 \subsection{Fully connected layer}
 
 Choose $a \in [1, 512]$, $b \in [1, 256]$ then
 %
 \begin{align}
-R_r[t] = \mathcal{W}^{3}_{rb}\mathrm{ReLU}\left(\mathcal{W}^{2}_{ba}\mathrm{ReLU}\left(\mathcal{W}^{1}_{ah} [x,y] \tilde{H}^t_h[x,y]\right)\right)
+R_r[t] = \mathcal{W}^{3}_{rb}\mathrm{ReLU}\left(\mathcal{W}^{2}_{ba}\mathrm{ReLU}\left(\mathcal{W}^{1}_{ah} [x,y] H^t_h[x,y] + \mathcal{B}^1_a\right) + \mathcal{B}^2_b \right) + \mathcal{B}^3_r
 \end{align}
 %
 with $r \in [1, 97]$.
@@ -122,9 +97,9 @@ with $r \in [1, 97]$.
 
 \section{Interpretation of a linearized model}
 
-We can write our final result $R_r[t]$ for the $r$-th river as a function $M_r$ (for model) which itself is a nested function call of the $r$-th component of the fully connected layer $F$, the decoder $D$ and the encoder $E$ on a given input time sequence  $\{X^t_k[x,y,\tau]\}$, i.e.
+We can write our final result $R_r[t]$ for the $r$-th river as a function $M_r$ (for model) which itself is a nested function call of the $r$-th component of the fully connected layer $F_r$ and the ConvLSTM $K$ on a given input time sequence  $\{X^t_k[x,y,\tau]\}$, i.e.
 \begin{tcolorbox}[ams align]
-R_r[t] = M_r(\{X^t_k[x,y,\tau]\}) = F_r(D(E(\{X^t_k[x,y,\tau]\})))
+R_r[t] = M_r(\{X^t_k[x,y,\tau]\}) = F_r(K(\{X^t_k[x,y,\tau]\}))
 \end{tcolorbox}
 %
 The idea is to approximate each $R_r[t]$ like
@@ -154,49 +129,44 @@ The upcoming task is hence to calculate the derivative of the model network with
 
 In order to keep the overview it is beneficial to write the output of each function in the nest as individual variables, i.e.
 \begin{tcolorbox}[ams align]
-\{\epsilon_{sh}[x,y]\} = E(\{X_k[x,y,\tau]\}) \\
-\{\tilde{H}_h[x,y]\} = D(\{\epsilon^s_h[x,y]\}) \\
-\phi_r = F_r(\{\tilde{H}_h[x,y]\})
+\{H_h[x,y]\} = K(\{X_k[x,y,\tau]\}) \\
+\phi_r = F_r(\{H_h[x,y]\})
 \end{tcolorbox}
-where the additional index $s$ in $\epsilon_{sh}[x,y]$ goes over the internal states of the encoder's output, i.e. 
-\begin{tcolorbox}[ams align]
-\epsilon_{1h}[x,y] = C_h[x,y,N_\tau], \quad \epsilon_{2h}[x,y] = H_h[x,y,N_\tau].
-\end{tcolorbox}
+
 %
 Note that the superscript $t$ is now omitted in the internal states since we calculate these quantities with respect to the reference sequence $\{X_k[x,y,\tau]\}$ that should not be connected to any specific time.
-%
-Note further that the decoder's output state $\tilde{H}_h[x,y]$ has already been defined above.
 
 As a first step we can now further evaluate the derivative via the chain rule
 \begin{align}
-\omega_{rk}[x,y,\tau] = \del{ M_r(\{X_k[x,y,\tau]\})}{X_k[x,y,\tau]} = \del{\phi_r}{\tilde{H}_{h''}[x'',y'']} \del{\tilde{H}_{h''}[x'',y'']}{\epsilon_{s'h'}[x',y']} \del{\epsilon_{s'h'}[x',y']}{X_k[x,y,\tau]}
+\omega_{rk}[x,y,\tau] = \del{ M_r(\{X_k[x,y,\tau]\})}{X_k[x,y,\tau]} = \del{\phi_r}{H_{h'}[x',y']} \del{H_{h'}[x',y']}{X_k[x,y,\tau]}
 \end{align}
 %
-The next task is to unfold the dependence of $\epsilon_{sh}[x,y]$ on $\{X_k[x,y,\tau]\}$.
+The next task is to unfold the dependence of $H_{h}[x,y]$ on $\{X_k[x,y,\tau]\}$.
 %
-For that purpose we define the action of one ConvLSTM cell as function $K$. 
+For that purpose we define the action of one ConvLSTM cell as function $L$. 
 Then $\epsilon_{sh}[x,y]$ is the $N_\tau$-fold nested function
 \begin{align}
-\epsilon_{sh}[x,y] = E(\{X_k[x,y,\tau]\}) = K(\{X_k[x,y,N_\tau]\},K(\{X_k[x,y,N_\tau-1]\},\ldots, \{X_k[x,y,2]\}, K(\{X_k[x,y,1]\},0)\ldots ))
+H_{h}[x,y] = K(\{X_k[x,y,\tau]\}) = L(\{X_k[x,y,N_\tau]\},L(\{X_k[x,y,N_\tau-1]\},\ldots, \{X_k[x,y,2]\}, L(\{X_k[x,y,1]\},0)\ldots ))
 \end{align}
 %
-We can now define the output of the $K$-calls recursively for a fixed $\tau$ as 
+We can now define the output of the $L$-calls recursively for a fixed $\tau$ as 
 %
 \begin{align}
-\{\kappa_{sh}[x,y,\tau]\} = K\left(\{X_k[x,y,\tau]\}, \{\kappa_{sh}[x,y,\tau-1]\} \right)
+\{\kappa_{sh}[x,y,\tau]\} = L\left(\{X_k[x,y,\tau]\}, \{\kappa_{sh}[x,y,\tau-1]\} \right)
 \end{align}
-with $\kappa_{sh}[x,y,0]=0$ and $\kappa_{sh}[x,y,N_\tau]=\epsilon_{sh}[x,y]$.
+where the additional index $s$ labels the two outputs of the $L$-function, i.e. $C_{h}[x,y,\tau]=\kappa_{1h}[x,y,\tau]$ and $H_{h}[x,y,\tau]=\kappa_{2h}[x,y,\tau]$.
+The initial condition is $\kappa_{sh}[x,y,0]=0$ and the endpoint is by construction $\kappa_{2h}[x,y,N_\tau]=H_{h}[x,y]$.
 %
-Now we can use the chain rule to calculate the derivative of $\epsilon_{s'h'}[x',y']$ with respect to $X_k[x,y,\tau]$ for a specific $\tau$
+Now we can use the chain rule to calculate for a specific $\tau$
 %
 \begin{align}
- \del{\epsilon_{s'h'}[x',y']}{X_k[x,y,\tau]} = \left( \prod_{j=\tau}^{N_\tau-1} \del{\kappa_{s_{j+1}h_{j+1}}[x_{j+1},y_{j+1},j+1]}{\kappa_{s_{j}h_{j}}[x_{j},y_{j},j]} \right) \del{\kappa_{s_{\tau}h_{\tau}}[x_{\tau},y_{\tau},\tau]}{X_k[x,y,\tau]}
+ \del{H_{h'}[x',y']}{X_k[x,y,\tau]} = \left. \del{\kappa_{s' h'}[x',y',N_\tau]}{X_k[x,y,\tau]} \right |_{s'=2} = \left. \left( \prod_{j=\tau}^{N_\tau-1} \del{\kappa_{s_{j+1}h_{j+1}}[x_{j+1},y_{j+1},j+1]}{\kappa_{s_{j}h_{j}}[x_{j},y_{j},j]} \right) \right |_{s_{N_\tau} = s' = 2} \del{\kappa_{s_{\tau}h_{\tau}}[x_{\tau},y_{\tau},\tau]}{X_k[x,y,\tau]}
 \end{align}
 with the boundary conditions for the auxiliary indices $x_{N_\tau}\equiv x', y_{N_\tau} \equiv y', h_{N_\tau} \equiv h', s_{N_\tau} \equiv s'$.
 %
 This can be inserted into the formula for $\omega_{rk}[x,y,\tau]$ yielding
 \begin{tcolorbox}[ams align]
-\omega_{rk}[x,y,\tau] = \del{\phi_r}{\tilde{H}_{h''}[x'',y'']} \del{\tilde{H}_{h''}[x'',y'']}{\epsilon_{s_{N_\tau} h_{N_\tau}}[x_{N_\tau},y_{N_\tau}]} \left( \prod_{j=\tau}^{N_\tau-1} \del{\kappa_{s_{j+1}h_{j+1}}[x_{j+1},y_{j+1},j+1]}{\kappa_{s_{j}h_{j}}[x_{j},y_{j},j]} \right) \del{\kappa_{s_{\tau}h_{\tau}}[x_{\tau},y_{\tau},\tau]}{X_k[x,y,\tau]}
+\omega_{rk}[x,y,\tau] = \del{\phi_r}{H_{h'}[x',y']} \left.\left( \prod_{j=\tau}^{N_\tau-1} \del{\kappa_{s_{j+1}h_{j+1}}[x_{j+1},y_{j+1},j+1]}{\kappa_{s_{j}h_{j}}[x_{j},y_{j},j]} \right) \right |_{s_{N_\tau} = s' = 2} \del{\kappa_{s_{\tau}h_{\tau}}[x_{\tau},y_{\tau},\tau]}{X_k[x,y,\tau]}
 \end{tcolorbox}
 
 At this point we have to evaluate the appearing derivatives explicitly.
@@ -274,7 +244,7 @@ Now that we have expressions for the derivatives we can give them names
 \end{tcolorbox}
 and insert it into the full expression
 \begin{align}
-\omega_{rk}[x,y,\tau] = \del{\phi_r}{\tilde{H}_{h''}[x'',y'']} \del{\tilde{H}_{h''}[x'',y'']}{\epsilon_{s_{N_\tau} h_{N_\tau}}[x_{N_\tau},y_{N_\tau}]} \left( \prod_{j=\tau}^{N_\tau-1} \Lambda_{s_{j+1}s_j,h_{j+1}h_j}[x_{j+1}, x_j, y_{j+1}, y_j, j+1] \right)
+\omega_{rk}[x,y,\tau] = \del{\phi_r}{\tilde{H}_{h'}[x',y']} \left. \left( \prod_{j=\tau}^{N_\tau-1} \Lambda_{s_{j+1}s_j,h_{j+1}h_j}[x_{j+1}, x_j, y_{j+1}, y_j, j+1] \right) \right |_{s_{N_\tau} = s' = 2} 
 \lambda_{s_\tau h_\tau,k}[x_\tau, x, y_\tau, y, \tau]
 \end{align}
 %
@@ -292,78 +262,53 @@ with $\tau \leq n \leq N_\tau$ then
 %
 for $n=\tau,\ldots N_\tau-1$ and $\chi_{s_{\tau} h_{\tau},k}[x_{\tau}, x, y_{\tau}, y, \tau, \tau] = \lambda_{s_\tau h_\tau,k}[x_\tau, x, y_\tau, y, \tau]$.
 
-The next task is to evaluate the derivative of the decoder with respect to the encoders output.
-%
-Since the decoder is itself a ConvLSTM cell with input from encoders last hidden state we can write
-\begin{align}
-\{\tilde{H}_{h}[x,y]\} = \tilde{K}_2 \left( \{ \epsilon_{2 h}[x,y]\}, \{ \epsilon_{s h}[x,y]\} \right)
-\end{align}
-%
-Following the same line of reasoning as above we obtain for the derivatives
-%
-\begin{tcolorbox}[ams align]
-\del{\tilde{H}_{h'}[x',y']}{\epsilon_{1h}[x,y]} = \del{\tilde{H}_{h'}[x',y']}{C_h[x,y,N_\tau]}  & = \frac{\tilde{O}_{h'}[x',y'] \tilde{F}_{h'}[x',y']}{\cosh^2(\tilde{C}_{h'}[x',y'])}  \delta_{hh'}\delta_{xx'}\delta_{yy'} \\
-\del{\tilde{H}_{h'}[x',y']}{\epsilon_{2h}[x,y]} = \del{\tilde{H}_{h'}[x',y']}{H_h[x,y,N_\tau]}     & = \dot{\sigma}(\tilde{o}_{h'}[x',y'])\tanh(\tilde{C}_{h'}[x',y']) \tilde{\mathcal{Q}}^{o}_{h'h}[x'-x,y'-y] \\
-& + \frac{\sigma(\tilde{o}_{h'}[x',y'])}{\cosh^2(\tilde{C}_{h'}[x',y'])} \tilde{\Lambda}_{1,2,h'h}[x', x, y', y]
-\end{tcolorbox}
-%
-with
-\begin{align}
-\tilde{\Lambda}_{1,2,h'h}[x', x, y', y] & = \dot{\sigma}(\tilde{f}_{h'}[x',y']) C_{h'}[x',y',N_\tau] \tilde{\mathcal{Q}}^{f}_{h'h}[x'-x,y'-y]\\
-& + \dot{\sigma}(\tilde{i}_{h'}[x',y']) \tanh(\tilde{c}_{h'}[x',y'])\tilde{\mathcal{Q}}^{i}_{h'h}[x'-x,y'-y]\\
-& +  \frac{\sigma(\tilde{i}_{h'}[x',y'])}{\cosh^2(\tilde{c}_{h'}[x',y'])} \tilde{\mathcal{Q}}^{c}_{h'h}[x'-x,y'-y]
-\end{align}
-%
-Now we can also rename these derivatives as
-\begin{tcolorbox}[ams align]
-\tilde{\chi}_{s_{N_\tau}h_{N_\tau}, h''}[x'', x_{N_\tau}, y'', y_{N_\tau}] = \del{\tilde{H}_{h''}[x'',y'']}{\epsilon_{s_{N_\tau} h_{N_\tau}}[x_{N_\tau},y_{N_\tau}]}
-\end{tcolorbox}
+
 %
 and insert into the full expression
 %
 \begin{align}
-\omega_{rk}[x,y,\tau] = \del{\phi_r}{\tilde{H}_{h''}[x'',y'']} \tilde{\chi}_{s_{N_\tau}h_{N_\tau}, h''}[x'', x_{N_\tau}, y'', y_{N_\tau}] \chi_{s_{N_\tau} h_{N_\tau},k}[x_{N_\tau}, x, y_{N_\tau}, y, N_\tau, \tau]
+\omega_{rk}[x,y,\tau] = \del{\phi_r}{H_{h'}[x',y']} \chi_{2,h',k}[x', x, y', y, N_\tau, \tau]
 \end{align}
 %
-If we define the product 
+If we define the symbol 
 %
 \begin{tcolorbox}[ams align]
-\Xi_{h''k}[x'', x, y'', y, \tau] = \tilde{\chi}_{s_{N_\tau}h_{N_\tau}, h''}[x'', x_{N_\tau}, y'', y_{N_\tau}] \chi_{s_{N_\tau} h_{N_\tau},k}[x_{N_\tau}, x, y_{N_\tau}, y, N_\tau, \tau]
+\Xi_{h'k}[x', x, y', y, \tau] =  \chi_{2,h',k}[x', x, y', y, N_\tau, \tau]
 \end{tcolorbox}
 %
 we can write
 \begin{tcolorbox}[ams align]
-\omega_{rk}[x,y,\tau] = \del{\phi_r}{\tilde{H}_{h''}[x'',y'']} \Xi_{h''k}[x'', x, y'', y, \tau]
+\omega_{rk}[x,y,\tau] = \del{\phi_r}{H_{h'}[x',y']} \Xi_{h'k}[x', x, y', y, \tau]
 \end{tcolorbox}
 
 The remaining task is to find the derivative of the fully connected layser with respect to the decoder's output.
 %
 For this purpose we define gain the output variables of the nested ReLU functions as individual variables, i.e.
 \begin{tcolorbox}[ams align]
-\rho^1_a & = \mathcal{W}^{1}_{ah} [x,y] \tilde{H}_h[x,y] \\
-\rho^2_b & = \mathcal{W}^{2}_{ba} \mathrm{ReLU}\left(\rho^1_a\right) \\
-\phi_r & = \mathcal{W}^{3}_{rb} \mathrm{ReLU}\left(\rho^2_b \right)
+\rho^1_a & = \mathcal{W}^{1}_{ah} [x,y] H_h[x,y] + \mathcal{B}^1_a \\
+\rho^2_b & = \mathcal{W}^{2}_{ba} \mathrm{ReLU}\left(\rho^1_a\right) + \mathcal{B}^2_b \\
+\phi_r & = \mathcal{W}^{3}_{rb} \mathrm{ReLU}\left(\rho^2_b \right) + \mathcal{B}^3_r
 \end{tcolorbox}
 %
 With these definitions we can write after using the chain rule
 \begin{align}
-\del{\phi_r}{\tilde{H}_{h''}[x'',y'']} = \del{\phi_r}{\rho^2_{b'}} \del{\rho^2_{b'}}{\rho^1_{a'}} \del{\rho^1_{a'}}{\tilde{H}_{h''}[x'',y'']}
+\del{\phi_r}{H_{h'}[x',y']} = \del{\phi_r}{\rho^2_{b'}} \del{\rho^2_{b'}}{\rho^1_{a'}} \del{\rho^1_{a'}}{\tilde{H}_{h''}[x'',y'']}
 \end{align}
 The individual derivatives can be easily carried out by noting $\partial \mathrm{ReLU}(x) / \partial x = \theta(x)$ which is the Heaviside step function
 \begin{align}
 \del{\phi_r}{\rho^2_{b'}} & = \mathcal{W}^{3}_{rb'} \theta \left( \rho^2_{b'} \right)  \\
  \del{\rho^2_{b'}}{\rho^1_{a'}} & =  \mathcal{W}^{2}_{b'a'} \theta \left( \rho^1_{a'} \right) \\
- \del{\rho^1_{a'}}{\tilde{H}_{h''}[x'',y'']} & = \mathcal{W}^{1}_{a'h''} [x'',y'']
+ \del{\rho^1_{a'}}{H_{h'}[x',y']} & = \mathcal{W}^{1}_{a'h'} [x',y']
 \end{align}
 %
 \begin{tcolorbox}[ams align]
-\del{\phi_r}{\tilde{H}_{h''}[x'',y'']} = \mathcal{W}^{3}_{rb'} \theta \left( \rho^2_{b'} \right) \cdot  \mathcal{W}^{2}_{b'a'} \theta \left( \rho^1_{a'} \right) \cdot \mathcal{W}^{1}_{a'h''} [x'',y''] = \Omega_{r h''}[x'',y'']
+\del{\phi_r}{H_{h'}[x',y']} = \mathcal{W}^{3}_{rb'} \theta \left( \rho^2_{b'} \right) \cdot  \mathcal{W}^{2}_{b'a'} \theta \left( \rho^1_{a'} \right) \cdot \mathcal{W}^{1}_{a'h'} [x',y'] = \Omega_{r h'}[x',y']
 \end{tcolorbox}
 
 As the final result we can then write 
 %
 \begin{tcolorbox}[ams align]
-\omega_{rk}[x,y,\tau] = \Omega_{r h''}[x'',y''] \cdot \Xi_{h''k}[x'', x, y'', y, \tau]
+\omega_{rk}[x,y,\tau] = \Omega_{r h'}[x',y'] \cdot \Xi_{h'k}[x', x, y', y, \tau]
 \end{tcolorbox}
 
 \subsection{Recipe}
