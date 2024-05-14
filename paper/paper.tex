@@ -257,51 +257,49 @@ In this work we will, we present a ConvLSTM architecture that is able to
 predict daily river runoff for 97 rivers across the Baltic Sea
 catchment. \textbf{\emph{mehr Fokus auf Neues?}}
 
-\section{Methods}\label{methods}
+\section{Implemented model
+architecture}\label{implemented-model-architecture}
 
-\subsection{Runoff data used for
-training}\label{runoff-data-used-for-training}
+\subsection{The main idea}\label{sec-main_idea}
 
-The runoff data covering the period 1979 to 2011 is based on an E-HYPE
-hindcast simulation that was forced by a regional downscaling of
-ERA-Interim (Dee et al., 2011) with RCA3 ({``The rossby centre regional
-climate model RCA3,''} n.d.) and implemented into NEMO-Nordic (Hordoir
-et al., 2019) as a mass flux. For the periods before (1961 to 1978) and
-after (2012 to 2018) additional spatial temporal corrections have been
-applied to the runoff data, and have therefore been ignored. For more
-information see Gröger et al. (2022) and references therein.
+We assume that the runoff for a specific point in time of all \(N_r\)
+considered rivers, collected in the vector
+\(\vec{R}^t \in \mathbb{R}^{N_r}\), can be accurately approximated by a
+functional \(\vec{M}(\{X^t_k[x,y,\tau]\})\) of \(k=1,\ldots N_k\)
+atmospheric fields \(X^t_k[x,y,\tau]\) that are known for the past
+\(\tau=1,\ldots N_\tau\) time instances, i.e.
 
-\subsection{Atmospheric Forcing}\label{atmospheric-forcing}
+\[
+\begin{aligned}
+\vec{R}^t = \vec{M}(\{X^t_k[x,y,\tau]\}) \ .
+\end{aligned}
+\]
 
-The UERRA-HARMONIE regional reanalysis dataset was developed as part of
-the FP7 UERRA project (Uncertainties in Ensembles of Regional
-Re-Analyses, \href{http://www.uerra.eu/}{http://www.uerra.eu/)},). The
-UERRA-HARMONIE system represents a comprehensive, high-resolution
-reanalysis covering a wide range of essential climate variables. This
-dataset encompasses data on air temperature, pressure, humidity, wind
-speed and direction, cloud cover, precipitation, albedo, surface heat
-fluxes, and radiation fluxes from January 1961 to July 2019. With a
-horizontal resolution of 11 km and analyses conducted at 00 UTC, 06 UTC,
-12 UTC, and 18 UTC, it also provides hourly resolution forecast model
-data. UERRA-HARMONIE is accessible through the Copernicus Climate Data
-Store (CDS, \url{https://cds.climate.copernicus.eu/\#!/home),} initially
-produced during the UERRA project and later transitioned to the
-Copernicus Climate Change Service (C3S,
-\url{https://climate.copernicus.eu/copernicus-regionalreanalysis-europe).}
+The fields are evaluated on a spatial domain \(x=1,\ldots N_x\) and
+\(y=1,\ldots N_y\) that is sufficiently large to capture all significant
+contributions to the modelled runoff.
 
-\subsection{Ocean Model}\label{ocean-model}
+We propose that this functional can be adequately represented by a
+combination of a ConvLSTM with a subsequent FC network as it is
+visualized in Figure~\ref{fig-ConvLSTM_FC} and described in detail in
+the following. In order to provide an overview, we will go through the
+main ingredients of this architecture one-by-one.
 
-To simulate the Baltic Sea, we use a coupled 3-dimensional ocean model
-Baltic Sea, called the Modular Ocean Model (MOM). This model uses a
-finite-difference method to solve the full set of primitive equations to
-calculate the motion of water and the transport of heat and salt. The
-K-profile parameterization (KPP) was used as turbulence closure scheme.
-The model's western boundary opens into the Skagerrak and connects the
-Baltic Sea to the North Sea. The maximum depth was set at 264 meters. A
-more detailed description of the setup can be found in (Gröger et al.,
-2022).
+\begin{figure}
 
-\subsection{LSTM network}\label{lstm-network}
+\centering{
+
+\captionsetup{labelsep=none}\includegraphics{./ConvLSTM_FC.png}
+
+}
+
+\caption{\label{fig-ConvLSTM_FC}}
+
+\end{figure}%
+
+\subsection{ConvLSTM network}\label{convlstm-network}
+
+\subsubsection{The LSTM approach}\label{sec-LSTM}
 
 Before turning to the convolutional LSTM, the simpler architecture of
 the plain LSTM is examined and should serve as a role model for the
@@ -326,7 +324,7 @@ of accuracy (see Figure~\ref{fig-lstm}).
 
 \centering{
 
-\includegraphics{draw_lstm.png}
+\includegraphics{./LSTM.png}
 
 }
 
@@ -336,28 +334,34 @@ Cell}
 \end{figure}%
 
 This performance in modeling long-range dependencies has been validated
-in various studies. The key component of LSTM's innovation is its memory
-cell, \(\vec{C}^t[\tau] = (C^t_h[\tau]) \in \mathbb{R}^{N_h}\), which
-stores state information, also referred to as long-term memory. The
-index \(\tau \in [1, N_\tau]\) corresponds to the \(\tau\)-th element in
-the input sequence. The cell state is a vector consists of elements,
-each associated with one of the \(N_h\) hidden layers, labeled by \(h\).
-This vector is determined through several self-parameterized gates, all
-in the same vector space as \(\vec{C}^t[\tau]\). The forget gate
-\(\vec{F}^t[\tau]\) defines the percentage of the previous long-term
-memory status \(\vec{C}^t[\tau-1]\) that should be retained
-stored\hspace{0pt}. The input gate \(\vec{I}^t[\tau]\) decides how much
-of the input is added to the the long-term memory, forming the updated
-cell state. The so-called output gate \(\vec{O}^t[\tau]\) then
-determines how much of the latest cell output, \(\vec{C}^t[\tau]\), is
-propagated to the final state, \(\vec{H}^t[\tau]\) representing the
-updated short-term memory of the hidden state.
+in various studies. The key component of the LSTM's innovation is its
+memory cell, \(\vec{C}^t[\tau] = (C^t_h[\tau]) \in \mathbb{R}^{N_h}\),
+which stores state information, also referred to as long-term memory.
+This state information complements the the so-called hidden state
+\(\vec{H}^t[\tau] = (H^t_h[\tau]) \in \mathbb{R}^{N_h}\) vector, which
+is also known from simpler neural network architectures. In case of the
+LSTM, the hidden state vector plays the role of the short-term meory.
+The cell state and the hidden state are vectors, where each element is
+associated with one of the so-called \(N_h\) hidden layers, labeled by
+\(h\). These two state vectors are determined through several
+self-parameterized gates, all in the same vector space as
+\(\vec{C}^t[\tau]\).
+
+In particular, the forget gate \(\vec{F}^t[\tau]\) defines the portion
+of the previous (long-term memory) cell state \(\vec{C}^t[\tau-1]\) that
+should be kept\hspace{0pt}. The input gate \(\vec{I}^t[\tau]\) controls
+the contribution of the current input that is used to update the
+long-term memory,\(\vec{C}^t[\tau]\). The output gate
+\(\vec{O}^t[\tau]\) then determines how much of this updated long-term
+memory contributes to the new (short-term memory) hidden state,
+\(\vec{H}^t[\tau]\).
 
 For a fixed point \(\tau\) in the sequence, the action of a LSTM cell,
 i.e.~the connection between the input \(\vec{X}^t[\tau]\), the various
-gates and the state vectors, is given as follows. First, the elements of
-the input sequence together with the hidden state are mapped onto
-auxiliary gate vectors, collectively denoted by
+gates and the state vectors, is mathematically given as follows.
+
+First, the elements of the input sequence together with the hidden state
+are mapped onto auxiliary gate vectors, collectively denoted by
 \(\vec{g}^t[\tau] = (g^t_h[\tau]) \in \mathbb{R}^{N_h}\), via \[
 \begin{aligned}
 g_h^t[\tau] =  \mathcal{M}^{g}_{hk} \, X^t_k[\tau] +  \mathcal{N}^{g}_{hh'} \, H^t_{h'}[\tau-1] + \mathcal{B}^g_{h} \ ,
@@ -412,7 +416,7 @@ where \(\sigma\) denotes the logisitc sigmoid function, \(\tanh\) is the
 hyperbolic tangent and the \(\circ\) stands for the Hadamard product
 (all applied in an element-wise fashion to the vectors). In the last two
 equations the role of the input, forget and output gates as described
-above become apparent.
+above becomes apparent.
 
 The third step in a single layer LSTM (as employed for the work
 presented here) is then to provide the output of the current LSTM cell,
@@ -423,19 +427,20 @@ sequence.
 The full action of the LSTM network up to the end of the sequence can
 therefore be written as a nested function call
 
-\[
-\left(\vec{H}^t[N_\tau], \vec{C}^t[N_\tau] \right) = L \left( \vec{X}^t[N_\tau], L \left( \vec{X}^t[N_\tau-1], \ldots L \left( \vec{X}^t[1], (\vec{H}^t[0], \vec{C}^t[0] \right) \ldots \right) \right) \ ,
-\]
+\begin{equation}\phantomsection\label{eq-L_nested}{
+\left(\vec{H}^t[N_\tau], \vec{C}^t[N_\tau] \right) = L \left( \vec{X}^t[N_\tau], L \left( \vec{X}^t[N_\tau-1], \ldots L \left( \vec{X}^t[1], (\vec{H}^t[0], \vec{C}^t[0]) \right) \ldots \right) \right) \ ,
+}\end{equation}
 
-where \(L\) represents Eqs. (Equation~\ref{eq-LSTM-gates},
-Equation~\ref{eq-LSTM}) and the initial conditions are usually chosen as
-\(\vec{H}^t[0]=\vec{C}^t[0]=0\).
+where
+\(L\left(\vec{X}^t[\tau], \left(\vec{H}^t[\tau-1], \vec{C}^t[\tau-1] \right) \right)\)
+represents Equation~\ref{eq-LSTM-gates} and Equation~\ref{eq-LSTM} and
+the initial conditions are chosen as \(\vec{H}^t[0]=\vec{C}^t[0]=0\).
 
 The final output \(\vec{H}^t[N_\tau]\) and \(\vec{C}^t[N_\tau]\) encode
 information on the full input sequence ending at time \(t\). This
-information has to be decoded to obtain usueful information via an
-appropriate subsequent layer, as it is described in the Sec.
-(\textbf{XXX?}).
+information has to be decoded to obtain useful information via an
+appropriate subsequent layer, as it is described in the
+Section~\ref{sec-FC_layer}.
 
 A significant advantage of this architecture is the memory cell's
 ability to retain gradients. This mechanism addresses the vanishing
@@ -446,15 +451,17 @@ inherently recurrent, mirrors the identity function with a consistent
 derivative of 1.0, ensuring the gradient remains stable throughout
 backpropagation.
 
-\subsection{ConvLSTM network}\label{convlstm-network}
+\subsubsection{Combining LSTM with spatial
+convolution}\label{combining-lstm-with-spatial-convolution}
 
 Although the plain LSTM has high performance in handling temporal
 sequences of point-like quantities it is not designed to recognize
-spatial features in seuqences of two-dimensional maps. To adress this
-limitation we use a convLSTM architecture.
+spatial features in seuqences of, e.g., two-dimensional maps. To adress
+this limitation we employ a ConvLSTM architecture as described in the
+following.
 
 In this kind of network the elements of the input sequence are given as
-(kind of) vector fields
+spatially varying fields
 \(\vec{X}^t[\tau] = (X^t_k[x,y,\tau]) \in \mathbb{R}^{N_k \times (N_x \times N_y)}\),
 where \(x\in[1, N_x]\) and \(y \in [1, N_y]\) run over the horizontal
 and vertical dimensions of the map, respectively. In order to enable the
@@ -471,16 +478,18 @@ where we assume odd numbers for the kernel sizes.
 The mapping from the input quantities to the gates is then given by a
 convolution with these kernels \[
 \begin{aligned}
-g^t_h[x,y,\tau] & =  \mathcal{M}^{g}_{hk} [\xi,\eta]\, X^t_k[x-\xi, y-\eta, \tau]  +  \mathcal{N}^{g}_{hh'}[\xi,\eta] \, H^t_{h'}[x-\xi, y-\eta, \tau-1] + \mathcal{B}^g_{h}[x,y] \ .
+g^t_h[x,y,\tau] & =  \mathcal{M}^{g}_{hk} [\xi,\eta]\, X^t_k[x-\xi, y-\eta, \tau]  +  \mathcal{N}^{g}_{hh'}[\xi,\eta] \, H^t_{h'}[x-\xi, y-\eta, \tau-1] + \mathcal{B}^g_{h}\ .
 \end{aligned}
 \]
 
-It becomes immediately apparent that in case of the convLSTM, the bias,
-gate and state vectors must become vector fields
+again with Einstein's convention imposed.
+
+It becomes immediately apparent that in case of the ConvLSTM, gate and
+state vectors must become vector fields
 (\(\in \mathbb{R}^{N_h \times (N_x \times N_y)}\)) as well. We can write
-this mapping in the same fashion as Eq. (Equation~\ref{eq-LSTM-gates})
-but with replacing the normal matrix-vector multiplication by a
-convolution (denoted with \(\ast\)), i.e.\\
+this mapping in the same fashion as Equation~\ref{eq-LSTM-gates} but
+with replacing the normal matrix-vector multiplication by a convolution
+(denoted with \(\ast\)), i.e.\\
 \[
 \begin{aligned}
 \vec{g}^t[\tau] = \pmb{\mathcal{M}}^{g} \ast \vec{X}^t[\tau] + \pmb{\mathcal{N}}^{g} \ast  \vec{H}^t[ \tau-1]+ \vec{\mathcal{B}}^g \,
@@ -488,9 +497,9 @@ convolution (denoted with \(\ast\)), i.e.\\
 \]
 
 The susebsequent processing of the \(\vec{g}^t[\tau]\) remains
-symbolically the same as presented in Eq. (Equation~\ref{eq-LSTM}) but
-with all appearing quantities meaning standing now for vector fields
-instead of simple vectors.
+symbolically the same as presented in Equation~\ref{eq-LSTM} but with
+all appearing quantities meaning standing now for vector fields instead
+of simple vectors.
 
 In summary, the ConvLSTM excels at processing tasks that demand a
 combined understanding of spatial patterns and temporal sequences in
@@ -498,25 +507,113 @@ data. It merges the image-processing capabilities of Convolutional
 Neural Networks (CNNs) with the time-series modeling of Long Short-Term
 Memory (LSTM) networks.
 
-\subsection{Implemented model
-architecture}\label{implemented-model-architecture}
+\subsection{Fully connected layer}\label{sec-FC_layer}
 
-The ConvLSTM architectures uses and encoder/decoder structure as
-discussed in TODO. To predict all 97 rivers entering the Baltic Sea, we
-flatten the output and use fully connected layers to map onto the
-individual rivers outputs.
+As stated in Sec. Section~\ref{sec-LSTM}, the final output
+\(\vec{H}^t[N_\tau]\) and \(\vec{C}^t[N_\tau]\) of the ConvLSTM encode
+information on the full input sequence. In order to contract this
+information to the runoff vector \(\vec{R}^t\) representing the \(N_r\)
+rivers, we propose to subject the final short-term memory (i.e.~the
+hidden state \(\vec{H}^t[N_\tau]\)) to an additional FC network.
 
-An overview of the model structure is given below
+In particular, the dimensionality of the vector field
+\(\vec{H}^t[N_\tau]\) is sequentially reduced by three nested FC layers,
+each connected to the other by the Rectified Linear Unit (ReLU), see
+Figure~\ref{fig-ConvLSTM_FC}. Integrating over artificial degrees of
+freedom in a step-wise fashion has turned out to be benificial
+((\textbf{XXX?})).
+
+Spelled out in mathematics the runoff of the \(r\)-th river is then
+obtained via (using Einstein's convention)
+
+\[
+\begin{aligned}
+R_r^t = \mathcal{W}^{3}_{rb}\mathrm{ReLU}\left(\mathcal{W}^{2}_{ba}\mathrm{ReLU}\left(\mathcal{W}^{1}_{ah} [x,y] H^t_h[x,y, N_\tau] + \mathcal{B}^1_a\right) + \mathcal{B}^2_b \right) + \mathcal{B}^3_r \ ,
+\end{aligned}
+\]
+
+where \(a=1,\ldots N_a\) and \(b=1,\ldots N_b\) and
+\(N_h\cdot N_x\cdot N_y > N_a > N_b > N_r\) in order to achieve the
+aforementioned step-by-step reduction of dimensionality. The weights
+\(\mathcal{W}\) and biases \(\mathcal{B}\) stand for parameters that are
+optimized during the training of the network.
+
+In matrix-vector notation this can compactified to \[
+\begin{aligned}
+\vec{R}^t = \pmb{\mathcal{W}}^{3}\mathrm{ReLU}\left(\pmb{\mathcal{W}}^{2}\mathrm{ReLU}\left(\pmb{\mathcal{W}}^{1} \vec{H}^t[N_\tau] + \vec{\mathcal{B}}^1\right) + \vec{\mathcal{B}}^2 \right) + \vec{\mathcal{B}}^3 \ .
+\end{aligned}
+\]
+
+Combining this equation with Equation~\ref{eq-L_nested} provides finally
+an explicit formula for the initial assumption of modelling the runoff
+for time \(t\) as a functional of a sequence of atmospheric fields, i.e.
+
+\[
+\begin{aligned}
+\vec{R}^t & = \vec{M}(\{X^t_k[x,y,\tau]\}) \\
+& = \pmb{\mathcal{W}}^{3}\mathrm{ReLU}\left(\pmb{\mathcal{W}}^{2}\mathrm{ReLU}\left(\pmb{\mathcal{W}}^{1} \vec{L}_H \left( \vec{X}^t[N_\tau], L \left( \vec{X}^t[N_\tau-1], \ldots L \left( \vec{X}^t[1], (0, 0) \right) \ldots \right) \right) + \vec{\mathcal{B}}^1\right) + \vec{\mathcal{B}}^2 \right) + \vec{\mathcal{B}}^3 \ ,
+\end{aligned}
+\] where the \(\vec{L}_H\) means that only the hidden state vector of
+the final ConvLSTM call is forwarded to the FC layer. In oder to make
+this model accurate the hyperparameters have to be chosen reasonable and
+the free parameters are to be adjusted accordingly.
+
+\section{Technical details}\label{technical-details}
+
+\subsection{Runoff data used for
+training}\label{runoff-data-used-for-training}
+
+The runoff data covering the period 1979 to 2011 is based on an E-HYPE
+hindcast simulation that was forced by a regional downscaling of
+ERA-Interim (Dee et al., 2011) with RCA3 ({``The rossby centre regional
+climate model RCA3,''} n.d.) and implemented into NEMO-Nordic (Hordoir
+et al., 2019) as a mass flux. For the periods before (1961 to 1978) and
+after (2012 to 2018) additional spatial temporal corrections have been
+applied to the runoff data, and have therefore been ignored. For more
+information see Gröger et al. (2022) and references therein.
+
+\subsection{Atmospheric Forcing}\label{atmospheric-forcing}
+
+The UERRA-HARMONIE regional reanalysis dataset was developed as part of
+the FP7 UERRA project (Uncertainties in Ensembles of Regional
+Re-Analyses, \href{http://www.uerra.eu/}{http://www.uerra.eu/)},). The
+UERRA-HARMONIE system represents a comprehensive, high-resolution
+reanalysis covering a wide range of essential climate variables. This
+dataset encompasses data on air temperature, pressure, humidity, wind
+speed and direction, cloud cover, precipitation, albedo, surface heat
+fluxes, and radiation fluxes from January 1961 to July 2019. With a
+horizontal resolution of 11 km and analyses conducted at 00 UTC, 06 UTC,
+12 UTC, and 18 UTC, it also provides hourly resolution forecast model
+data. UERRA-HARMONIE is accessible through the Copernicus Climate Data
+Store (CDS, \url{https://cds.climate.copernicus.eu/\#!/home),} initially
+produced during the UERRA project and later transitioned to the
+Copernicus Climate Change Service (C3S,
+\url{https://climate.copernicus.eu/copernicus-regionalreanalysis-europe).}
+
+\subsection{Ocean Model}\label{ocean-model}
+
+To simulate the Baltic Sea, we use a coupled 3-dimensional ocean model
+Baltic Sea, called the Modular Ocean Model (MOM). This model uses a
+finite-difference method to solve the full set of primitive equations to
+calculate the motion of water and the transport of heat and salt. The
+K-profile parameterization (KPP) was used as turbulence closure scheme.
+The model's western boundary opens into the Skagerrak and connects the
+Baltic Sea to the North Sea. The maximum depth was set at 264 meters. A
+more detailed description of the setup can be found in (Gröger et al.,
+2022).
+
+\subsection{Neural network hyper
+parameters}\label{neural-network-hyper-parameters}
 
 \begin{figure}
 
 \centering{
 
-\includegraphics{convLSTM.png}
+\includegraphics{ConvLSTM.png}
 
 }
 
-\caption{\label{fig-baltNet}Schematic structure of the convLSTM
+\caption{\label{fig-baltNet}Schematic structure of the ConvLSTM
 implementation for river runoff forecasting.}
 
 \end{figure}%
