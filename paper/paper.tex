@@ -159,7 +159,7 @@
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
-  pdftitle={From Precipitation to Prediction: Integrating ConvLSTM Models for Comprehensive River Runoff Forecasting},
+  pdftitle={From Precipitation to Prediction: Using ConvLSTM Models for Comprehensive River Runoff Forecasting},
   pdfauthor={Florian Börgel; Sven Karsten; Karoline Rummel},
   colorlinks=true,
   linkcolor={blue},
@@ -173,7 +173,7 @@
 \draftfalse
 
 \begin{document}
-\title{From Precipitation to Prediction: Integrating ConvLSTM Models for
+\title{From Precipitation to Prediction: Using ConvLSTM Models for
 Comprehensive River Runoff Forecasting}
 
 \authors{Florian Börgel\affil{1}, Sven Karsten\affil{1}, Karoline
@@ -190,47 +190,49 @@ a
 b
 
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[breakable, interior hidden, borderline west={3pt}{0pt}{shadecolor}, enhanced, frame hidden, boxrule=0pt, sharp corners]}{\end{tcolorbox}}\fi
+\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, enhanced, boxrule=0pt, breakable, borderline west={3pt}{0pt}{shadecolor}, sharp corners, frame hidden]}{\end{tcolorbox}}\fi
 
 \hypertarget{introduction}{%
 \section{Introduction}\label{introduction}}
 
 River runoff is an important component of the global water cycle as it
 comprises about one third of the precipitation over land areas (Hagemann
-et al., 2020). In the context of climate change studies, river runoff is
-usually generated in two ways. First, river runoff as input for ocean
-models can be created using hydrological models such as the Hydrological
-Discharge (HD) model (Hagemann et al., 2020). HD models calculates the
-water balance using hydrological processes (e.g.~snow, glaciers, soil
-moisture, groundwater contribution). It represents a complex forecasting
-tool that uses underlying physical processes. A different approach would
-use data-based models that integrate statistical correction, using the
-land surface schemes of global or regional climate models.
+et al., 2020). Therefore, accurate runoff forecasting is crucial for
+effective water resources management, particularly over extended periods
+(Fang et al., 2019; Tan et al., 2018). In the context of climate change
+studies, river runoff is usually generated in two ways. First, river
+runoff as input for ocean models can be created using hydrological
+models such as the Hydrological Discharge (HD) model (Hagemann et al.,
+2020). HD models calculate the water balance using hydrological
+processes (e.g.~snow, glaciers, soil moisture, groundwater
+contribution). It represents a complex forecasting tool that uses
+underlying physical processes. The second approach uses data-driven
+models that integrate statistical correction, using land surface schemes
+of global or regional climate models {[}QUELLE{]}.
 
-The relatively recent emergence of machine learning (ML) models has
-offered different approaches to river runoff forecasting. Accurate
-runoff forecasting is crucial for effective water resources management,
-particularly over extended periods (W. Fang et al., 2019; Tan et al.,
-2018). Common approaches employ feed-forward artificial neural networks,
+With the recent rise of machine learning in climate research various
+model architectures have also been tested for river runoff forecasting.
+Common approaches employ feed-forward artificial neural networks,
 support vector machines, adaptive neuro-fuzzy inference systems, and
 notably, Long Short-Term Memory (LSTM) neural networks that have gained
 traction for long-term hydrological forecasting due to their excellent
-performance (Ashrafi et al., 2017; L. Fang \& Shao, 2022; Huang et al.,
-2014; Humphrey et al., 2016; Kratzert et al., 2018; Liu et al., 2020).
+performance (\textbf{humphrey2016hybrid?}; \textbf{huang2014monthly?};
+\textbf{ashrafi2017fully?}; \textbf{liu2020streamflow?};
+\textbf{fang2022application?}; \textbf{kratzert2018rainfall?}).
 
-LSTM networks, first introduced by Hochreiter \& Schmidhuber (1997) ,
-are an evolution of the classical Recurrent Neural Networks (RNNs).
-Their structure enables them to learn long-term dependencies while
-avoiding the vanishing or exploding gradient problem. They have shown
-stability and efficacy in sequence-to-sequence predictions. However, a
-limitation of LSTMs is their inability to effectively capture
-two-dimensional structures, an area where Convolutional Neural Networks
-(CNNs) excel. Recognizing this limitation SHI et al. (2015) proposed a
-Convolutional LSTM (ConvLSTM) architecture, which combines the strengths
-of both LSTM and CNN. The ConvLSTM network has been proven useful for
-spatio-temporal applications such as precipitation nowcasting (SHI et
-al., 2015), flood forecasting (Moishin et al., 2021), and river runoff
-forecasting (Ha et al., 2021; Zhu et al., 2023).
+LSTM networks, first introduced by (\textbf{hochreiter1997long?}) , are
+an evolution of the classical Recurrent Neural Networks (RNNs). Their
+structure enables them to learn long-term dependencies while avoiding
+the vanishing or exploding gradient problem. They have shown stability
+and efficacy in sequence-to-sequence predictions. However, a limitation
+of LSTMs is their inability to effectively capture two-dimensional
+structures, an area where Convolutional Neural Networks (CNNs) excel.
+Recognizing this limitation SHI et al. (2015) proposed a Convolutional
+LSTM (ConvLSTM) architecture, which combines the strengths of both LSTM
+and CNN. The ConvLSTM network has been proven useful for spatio-temporal
+applications such as precipitation nowcasting (SHI et al., 2015), flood
+forecasting (\textbf{moishin2021designing?}), and river runoff
+forecasting (\textbf{ha2021?}; \textbf{zhu2023spatiotemporal?}).
 
 In this work, we demonstrate that ConvLSTM networks are a reliable
 method for predicting multiple rivers simultaneously, using only
@@ -238,18 +240,18 @@ atmospheric forcing, even in the absence of a fully functional
 hydrological model with a complex parameterization. We use the Baltic
 Sea catchment as an example to illustrate our approach. Although the
 methodology we propose is universally applicable across various
-geographic regions, the Baltic Sea presents a challenge due to its
-unique hydrological characteristics, being nearly decoupled from the
-open ocean (see Figure). As a consequence, the salinity of the Baltic
-Sea is driven to a large part by freshwater supply from rivers.
+geographic regions, the Baltic Sea represents a challenging region due
+to its unique hydrological characteristics, being nearly decoupled from
+the open ocean (see Figure). As a consequence, the salinity of the
+Baltic Sea is driven to a large part by freshwater supply from rivers.
 Freshwater enters the Baltic Sea through river runoff or positive net
 precipitation (precipitation minus evaporation) over the sea surface.
 The net precipitation accounts for 11 \(\%\) and the river input for 89
-\(\%\) of the total freshwater input (Meier \& Döscher, 2002). Modelling
-the Baltic Sea is therefore to a large part the result of the quality of
-the river input, that is used for the simulation. This makes the
-accurate modeling of river runoff especially critical for simulations
-pertaining to the Baltic Sea.
+\(\%\) of the total freshwater input (\textbf{meier2002simulated?}).
+Modelling the Baltic Sea is therefore to a large part the result of the
+quality of the river input, that is used for the simulation. This makes
+the accurate modeling of river runoff especially critical for
+simulations pertaining to the Baltic Sea.
 
 In this work we will, we present a ConvLSTM architecture that is able to
 predict daily river runoff for 97 rivers across the Baltic Sea
@@ -287,8 +289,9 @@ precipitation and evaporation into river runoff. This process relies
 heavily on domain knowledge to tune all parameters to reasonable values.
 
 As an alternative, we propose that this functional can be adequately
-represented by a combination of a ConvLSTM with a subsequent FC network.
-This approach eliminates the need for detailed knowledge of the involved
+represented by a combination of a convolutional Long-Short Term Memory
+(ConvLSTM) model with a subsequent fully connected neural network. This
+approach eliminates the need for detailed knowledge of the involved
 processes and their modeling. Instead, these features can be ``learned''
 by the network in an automated manner. Our proposed network architecture
 is visualized in Figure~\ref{fig-ConvLSTM_FC} and described in detail in
@@ -332,13 +335,12 @@ ommitted for the sake of clarity. See text for more information.}
 \hypertarget{sec-LSTM}{%
 \subsubsection{The LSTM approach}\label{sec-LSTM}}
 
-Before turning directly to the convolutional LSTM, the simpler
-architecture of the plain LSTM is examined which serves as a foundation
-for understanding the more complex ConvLSTM.
+Before turning directly to the ConvLSTM the simpler architecture of the
+plain Long-Short Term Memory (LSTM) model is examined which serves as a
+foundation for understanding the more complex ConvLSTM.
 
-The Long Short-Term Memory (LSTM), a specialized form of Recurrent
-Neural Networks (RNNs), is specifically designed to model temporal
-sequences
+The LSTM, a specialized form of Recurrent Neural Networks (RNNs), is
+specifically designed to model temporal sequences
 \(\vec{X}^t[1], \ldots \vec{X}^t[\tau],\ldots \vec{X}^t[N_\tau]\) of
 \(N_\tau\) input quantities
 \(\vec{X}^t[\tau] = (X^t_k[\tau]) \in \mathbb{R}^{N_k}\). This sequence
@@ -445,7 +447,7 @@ matrix-vector form as
 }\label{eq-LSTM-gates}\end{equation}
 
 Second, the actual gate vectors are computed by the core equations of
-the LSTM as proposed by Hochreiter \& Schmidhuber (1997):
+the LSTM as proposed by (\textbf{hochreiter1997long?}):
 
 \begin{equation}\protect\hypertarget{eq-LSTM}{}{
 \begin{aligned}
@@ -613,13 +615,13 @@ training}\label{runoff-data-used-for-training}}
 
 The runoff data covering the period 1979 to 2011 is based on an E-HYPE
 hindcast simulation that was forced by a regional downscaling of
-ERA-Interim (Dee et al., 2011) with RCA3 ({``The rossby centre regional
-climate model RCA3,''} n.d.) and implemented into NEMO-Nordic (Hordoir
-et al., 2019) as a mass flux. For the periods before (1961 to 1978) and
-after (2012 to 2018) additional spatial temporal corrections have been
-applied to the runoff data, and have therefore been ignored. The quality
-of the runoff was extensively evaluated. For more information see Gröger
-et al. (2022) and references therein.
+ERA-Interim (\textbf{dee2011?}) with RCA3 (\textbf{theross?}) and
+implemented into NEMO-Nordic (\textbf{hordoir2019?}) as a mass flux. For
+the periods before (1961 to 1978) and after (2012 to 2018) additional
+spatial temporal corrections have been applied to the runoff data, and
+have therefore been ignored. The quality of the runoff was extensively
+evaluated. For more information see (\textbf{gröger2022?}) and
+references therein.
 
 \hypertarget{atmospheric-forcing}{%
 \subsection{Atmospheric Forcing}\label{atmospheric-forcing}}
@@ -650,8 +652,8 @@ calculate the motion of water and the transport of heat and salt. The
 K-profile parameterization (KPP) was used as turbulence closure scheme.
 The model's western boundary opens into the Skagerrak and connects the
 Baltic Sea to the North Sea. The maximum depth was set at 264 meters. A
-more detailed description of the setup can be found in (Gröger et al.,
-2022).
+more detailed description of the setup can be found in
+(\textbf{gröger2022?}).
 
 \hypertarget{neural-network-hyper-parameters}{%
 \subsection{Neural network hyper
@@ -691,19 +693,13 @@ Learning Rate & 1e-3 with CosineAnnealing \\
 \bottomrule()
 \end{longtable}
 
-As input the model receives 30 days of atmospheric surface fields
-temperature \(T\), precipitation \(P\), specific humidity \(Q\) and wind
-speed \(W\), with a daily resolution to predict the river runoff \(R\)
-at the time step \(\Delta t+1\) , which can be summarized as
-
-\(R_{\Delta t+1} = f\left(T_{t-30:t}, P_{t-30:t}, Q_{t-30:t}, W_{t-30:t}\right)\)
-
-with f being a function maps the 30 days of daily atmospheric surface
-fields data to the predicted river runoff.
-
-The choice of atmospheric fields was based on the implemented river
-runoff calculation in the atmospheric model COSMO-CLM which uses these
-atmospheric fields to calculate an river runoff estimate.
+As input the model receives \(N_{\tau}\) = 30 days of atmospheric
+surface fields temperature \(T\), precipitation \(P\), specific humidity
+\(Q\) and wind speed \(W\), with a daily resolution to predict the river
+runoff \(\vec{R}\). The choice of atmospheric fields was based on the
+implemented river runoff calculation in the atmospheric model COSMO-CLM
+which uses these atmospheric fields to calculate an river runoff
+estimate.
 
 \hypertarget{results}{%
 \section{Results}\label{results}}
@@ -721,7 +717,7 @@ during training have been stored.
 The accuracy of the model is displayed in Figure
 \textbf{?@fig-statistical-evaluationNN}. As mention above for
 evaluation, the test dataset was utilized. The left panel panel (Figure
-\textbf{?@fig-statistical-evaluationNN} a) ) illustrates the relative
+\textbf{?@fig-statistical-evaluationNN} a) illustrates the relative
 prediction error in relation to the original E-HYPE data, indicating
 that, on daily timescales, the model can predict river runoff with an
 accuracy of \(\pm\) 5\(\%\). The overall correlation is 0.997 with the
@@ -793,14 +789,13 @@ projections, that allow to quantify regional climate change impacts, the
 availability of precise hydrological forecasting becomes invaluable. The
 quality of a projection for a coastal sea such as the Baltic Sea is too
 large parts based on the quality of the hyrdological conditions. In this
-work we analyze the implementation of Convolutional Long Short-Term
-Memory (ConvLSTM) networks for predicting river runoff, highlighting its
-potential to enhance river runoff forecasting across different coastal
-seas. Given the unique hydrological characteristics of the Baltic Sea,
-largely influenced by its limited connection to the open ocean and
-significant freshwater input from surrounding rivers, the region
-presents a critical case for the application of sophisticated
-forecasting models.
+work we analyze the implementation of a ConvLSTM networks for predicting
+river runoff, highlighting its potential to enhance river runoff
+forecasting across different coastal seas. Given the unique hydrological
+characteristics of the Baltic Sea, largely influenced by its limited
+connection to the open ocean and significant freshwater input from
+surrounding rivers, the region presents a critical case for the
+application of sophisticated forecasting models.
 
 The transition from traditional hydrological models to machine learning
 approaches, such as the ConvLSTM model, offers significant advantages.
@@ -845,20 +840,9 @@ regional climate systems.
 \hypertarget{acknowledgments}{%
 \section{Acknowledgments}\label{acknowledgments}}
 
-Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
-fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
-Vivamus eget rutrum purus. Etiam et pretium justo. Donec et egestas sem.
-Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
-fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
-
-\hypertarget{open-research}{%
-\section{Open research}\label{open-research}}
-
-Phasellus interdum tincidunt ex, a euismod massa pulvinar at. Ut
-fringilla ut nisi nec volutpat. Morbi imperdiet congue tincidunt.
-Vivamus eget rutrum purus. Etiam et pretium justo. Donec et egestas sem.
-Donec molestie ex sit amet viverra egestas. Nullam justo nulla,
-fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
+The research presented in this study is part of the Baltic Earth program
+(Earth System Science for the Baltic Sea region, see
+\href{https://www.baltic.earth/}{https://www.baltic.earth}.
 
 \hypertarget{references}{%
 \section*{References}\label{references}}
@@ -868,23 +852,6 @@ fringilla at iaculis in, posuere non mauris. Ut eget imperdiet elit.
 \begin{CSLReferences}{1}{0}
 \vspace{1em}
 
-\leavevmode\vadjust pre{\hypertarget{ref-ashrafi2017fully}{}}%
-Ashrafi, M., Chua, L. H. C., Quek, C., \& Qin, X. (2017). A fully-online
-neuro-fuzzy model for flow forecasting in basins with limited data.
-\emph{Journal of Hydrology}, \emph{545}, 424--435.
-
-\leavevmode\vadjust pre{\hypertarget{ref-dee2011}{}}%
-Dee, D. P., Uppala, S. M., Simmons, A. J., Berrisford, P., Poli, P.,
-Kobayashi, S., et al. (2011). The ERA-Interim reanalysis: configuration
-and performance of the data assimilation system. \emph{Quarterly Journal
-of the Royal Meteorological Society}, \emph{137}(656), 553--597.
-\url{https://doi.org/10.1002/qj.828}
-
-\leavevmode\vadjust pre{\hypertarget{ref-fang2022application}{}}%
-Fang, L., \& Shao, D. (2022). Application of long short-term memory
-(LSTM) on the prediction of rainfall-runoff in karst area.
-\emph{Frontiers in Physics}, \emph{9}, 790687.
-
 \leavevmode\vadjust pre{\hypertarget{ref-fangExaminingApplicabilityDifferent2019}{}}%
 Fang, W., Huang, S., Ren, K., Huang, Q., Huang, G., Cheng, G., \& Li, K.
 (2019). Examining the applicability of different sampling techniques in
@@ -892,67 +859,11 @@ the development of decomposition-based streamflow forecasting models.
 \emph{Journal of Hydrology}, \emph{568}, 534--550.
 \url{https://doi.org/10.1016/j.jhydrol.2018.11.020}
 
-\leavevmode\vadjust pre{\hypertarget{ref-gruxf6ger2022}{}}%
-Gröger, M., Placke, M., Meier, M., Börgel, F., Brunnabend, S.-E.,
-Dutheil, C., et al. (2022). \emph{The Baltic Sea model inter-comparison
-project BMIP {\textendash} a platform for model development, evaluation,
-and uncertainty assessment}. Retrieved from
-\url{https://gmd.copernicus.org/preprints/gmd-2022-160/}
-
-\leavevmode\vadjust pre{\hypertarget{ref-ha2021}{}}%
-Ha, S., Liu, D., \& Mu, L. (2021). Prediction of Yangtze River
-streamflow based on deep learning neural network with El
-Niño{\textendash}Southern Oscillation. \emph{Scientific Reports},
-\emph{11}(1), 11738. \url{https://doi.org/10.1038/s41598-021-90964-3}
-
 \leavevmode\vadjust pre{\hypertarget{ref-hagemannHighResolutionDischarge2020}{}}%
 Hagemann, S., Stacke, T., \& Ho-Hagemann, H. T. M. (2020). High
 {Resolution Discharge Simulations Over Europe} and the {Baltic Sea
 Catchment}. \emph{Frontiers in Earth Science}, \emph{8}.
 \url{https://doi.org/10.3389/feart.2020.00012}
-
-\leavevmode\vadjust pre{\hypertarget{ref-hochreiter1997long}{}}%
-Hochreiter, S., \& Schmidhuber, J. (1997). Long short-term memory.
-\emph{Neural Computation}, \emph{9}(8), 1735--1780.
-
-\leavevmode\vadjust pre{\hypertarget{ref-hordoir2019}{}}%
-Hordoir, R., Axell, L., Höglund, A., Dieterich, C., Fransner, F.,
-Gröger, M., et al. (2019). Nemo-nordic 1.0: A NEMO-based ocean model for
-the baltic and north seas {\textendash} research and operational
-applications. \emph{Geoscientific Model Development}, \emph{12}(1),
-363--386. \url{https://doi.org/10.5194/gmd-12-363-2019}
-
-\leavevmode\vadjust pre{\hypertarget{ref-huang2014monthly}{}}%
-Huang, S., Chang, J., Huang, Q., \& Chen, Y. (2014). Monthly streamflow
-prediction using modified EMD-based support vector machine.
-\emph{Journal of Hydrology}, \emph{511}, 764--775.
-
-\leavevmode\vadjust pre{\hypertarget{ref-humphrey2016hybrid}{}}%
-Humphrey, G. B., Gibbs, M. S., Dandy, G. C., \& Maier, H. R. (2016). A
-hybrid approach to monthly streamflow forecasting: Integrating
-hydrological model outputs into a bayesian artificial neural network.
-\emph{Journal of Hydrology}, \emph{540}, 623--640.
-
-\leavevmode\vadjust pre{\hypertarget{ref-kratzert2018rainfall}{}}%
-Kratzert, F., Klotz, D., Brenner, C., Schulz, K., \& Herrnegger, M.
-(2018). Rainfall--runoff modelling using long short-term memory (LSTM)
-networks. \emph{Hydrology and Earth System Sciences}, \emph{22}(11),
-6005--6022.
-
-\leavevmode\vadjust pre{\hypertarget{ref-liu2020streamflow}{}}%
-Liu, D., Jiang, W., Mu, L., \& Wang, S. (2020). Streamflow prediction
-using deep learning neural network: Case study of yangtze river.
-\emph{IEEE Access}, \emph{8}, 90069--90086.
-
-\leavevmode\vadjust pre{\hypertarget{ref-meier2002simulated}{}}%
-Meier, H. M., \& Döscher, R. (2002). Simulated water and heat cycles of
-the baltic sea using a 3D coupled atmosphere--ice--ocean model.
-\emph{Boreal Environment Research}, \emph{7}(4), 327.
-
-\leavevmode\vadjust pre{\hypertarget{ref-moishin2021designing}{}}%
-Moishin, M., Deo, R. C., Prasad, R., Raj, N., \& Abdulla, S. (2021).
-Designing deep-based learning flood forecast model with ConvLSTM hybrid
-algorithm. \emph{IEEE Access}, \emph{9}, 50982--50993.
 
 \leavevmode\vadjust pre{\hypertarget{ref-shiConvolutionalLSTMNetwork2015}{}}%
 SHI, X., Chen, Z., Wang, H., Yeung, D.-Y., Wong, W., \& WOO, W. (2015).
@@ -967,18 +878,6 @@ A.-Q. (2018). An adaptive middle and long-term runoff forecast model
 using {EEMD-ANN} hybrid approach. \emph{Journal of Hydrology},
 \emph{567}, 767--780.
 \url{https://doi.org/10.1016/j.jhydrol.2018.01.015}
-
-\leavevmode\vadjust pre{\hypertarget{ref-theross}{}}%
-The rossby centre regional climate model RCA3: Model description and
-performance - tellus a: Dynamic meteorology and oceanography. (n.d.).
-Retrieved from
-\url{https://a.tellusjournals.se/articles/10.1111/j.1600-0870.2010.00478.x}
-
-\leavevmode\vadjust pre{\hypertarget{ref-zhu2023spatiotemporal}{}}%
-Zhu, S., Wei, J., Zhang, H., Xu, Y., \& Qin, H. (2023). Spatiotemporal
-deep learning rainfall-runoff forecasting combined with remote sensing
-precipitation products in large scale basins. \emph{Journal of
-Hydrology}, \emph{616}, 128727.
 
 \end{CSLReferences}
 
