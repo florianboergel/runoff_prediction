@@ -7,7 +7,6 @@
 ]{agujournal2019}
 
 \usepackage{amsmath,amssymb}
-\usepackage{lmodern}
 \usepackage{iftex}
 \ifPDFTeX
   \usepackage[T1]{fontenc}
@@ -17,6 +16,10 @@
   \usepackage{unicode-math}
   \defaultfontfeatures{Scale=MatchLowercase}
   \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else  
+    % xetex/luatex font selection
 \fi
 % Use upquote if available, for straight quotes in verbatim environments
 \IfFileExists{upquote.sty}{\usepackage{upquote}}{}
@@ -72,28 +75,38 @@
 \makeatletter
 \def\fps@figure{htbp}
 \makeatother
+% definitions for citeproc citations
+\NewDocumentCommand\citeproctext{}{}
+\NewDocumentCommand\citeproc{mm}{%
+  \begingroup\def\citeproctext{#2}\cite{#1}\endgroup}
+\makeatletter
+ % allow citations to break across lines
+ \let\@cite@ofmt\@firstofone
+ % avoid brackets around text for \cite:
+ \def\@biblabel#1{}
+ \def\@cite#1#2{{#1\if@tempswa , #2\fi}}
+\makeatother
 \newlength{\cslhangindent}
 \setlength{\cslhangindent}{1.5em}
 \newlength{\csllabelwidth}
 \setlength{\csllabelwidth}{3em}
-\newlength{\cslentryspacingunit} % times entry-spacing
-\setlength{\cslentryspacingunit}{\parskip}
-\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
- {% don't indent paragraphs
-  \setlength{\parindent}{0pt}
+\newenvironment{CSLReferences}[2] % #1 hanging-indent, #2 entry-spacing
+ {\begin{list}{}{%
+  \setlength{\itemindent}{0pt}
+  \setlength{\leftmargin}{0pt}
+  \setlength{\parsep}{0pt}
   % turn on hanging indent if param 1 is 1
   \ifodd #1
-  \let\oldpar\par
-  \def\par{\hangindent=\cslhangindent\oldpar}
+   \setlength{\leftmargin}{\cslhangindent}
+   \setlength{\itemindent}{-1\cslhangindent}
   \fi
   % set entry spacing
-  \setlength{\parskip}{#2\cslentryspacingunit}
- }%
- {}
+  \setlength{\itemsep}{#2\baselineskip}}}
+ {\end{list}}
 \usepackage{calc}
-\newcommand{\CSLBlock}[1]{#1\hfill\break}
-\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
-\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLBlock}[1]{\hfill\break\parbox[t]{\linewidth}{\strut\ignorespaces#1\strut}}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{\strut#1\strut}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{\strut#1\strut}}
 \newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
 
 \usepackage{url} %this package should fix any errors with URLs in refs.
@@ -101,10 +114,6 @@
 \usepackage[inline]{trackchanges} %for better track changes. finalnew option will compile document with changes incorporated.
 \usepackage{soul}
 \linenumbers
-\makeatletter
-\makeatother
-\makeatletter
-\makeatother
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -141,21 +150,16 @@
 \newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
 \makeatother
 \makeatletter
+\makeatother
+\makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
-\makeatother
-\makeatletter
-\@ifpackageloaded{tcolorbox}{}{\usepackage[many]{tcolorbox}}
-\makeatother
-\makeatletter
-\@ifundefined{shadecolor}{\definecolor{shadecolor}{rgb}{.97, .97, .97}}
-\makeatother
-\makeatletter
 \makeatother
 \ifLuaTeX
   \usepackage{selnolig}  % disable illegal ligatures
 \fi
-\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\usepackage{bookmark}
+
 \IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
 \urlstyle{same} % disable monospaced font for URLs
 \hypersetup{
@@ -190,10 +194,8 @@ a
 b
 
 
-\ifdefined\Shaded\renewenvironment{Shaded}{\begin{tcolorbox}[interior hidden, enhanced, boxrule=0pt, breakable, borderline west={3pt}{0pt}{shadecolor}, sharp corners, frame hidden]}{\end{tcolorbox}}\fi
 
-\hypertarget{introduction}{%
-\section{Introduction}\label{introduction}}
+\section{Introduction}\label{introduction}
 
 River runoff is an important component of the global water cycle as it
 comprises about one third of the precipitation over land areas (Hagemann
@@ -208,7 +210,7 @@ processes (e.g.~snow, glaciers, soil moisture, groundwater
 contribution). It represents a complex forecasting tool that uses
 underlying physical processes. The second approach uses data-driven
 models that integrate statistical correction, using land surface schemes
-of global or regional climate models {[}QUELLE{]}.
+of global or regional climate models {[}\texttt{missing}{]}.
 
 With the recent rise of machine learning in climate research various
 model architectures have also been tested for river runoff forecasting.
@@ -221,25 +223,33 @@ performance (\textbf{humphrey2016hybrid?}; \textbf{huang2014monthly?};
 \textbf{fang2022application?}; \textbf{kratzert2018rainfall?}).
 
 LSTM networks, first introduced by (\textbf{hochreiter1997long?}) , are
-an evolution of the classical Recurrent Neural Networks (RNNs). Their
-structure enables them to learn long-term dependencies while avoiding
-the vanishing or exploding gradient problem. They have shown stability
-and efficacy in sequence-to-sequence predictions. However, a limitation
-of LSTMs is their inability to effectively capture two-dimensional
-structures, an area where Convolutional Neural Networks (CNNs) excel.
-Recognizing this limitation SHI et al. (2015) proposed a Convolutional
-LSTM (ConvLSTM) architecture, which combines the strengths of both LSTM
-and CNN. The ConvLSTM network has been proven useful for spatio-temporal
-applications such as precipitation nowcasting (SHI et al., 2015), flood
-forecasting (\textbf{moishin2021designing?}), and river runoff
-forecasting (\textbf{ha2021?}; \textbf{zhu2023spatiotemporal?}).
+an evolution of the classical Recurrent Neural Networks (RNNs). A
+significant advantage of this architecture is the memory cell's ability
+to retain gradients. This mechanism addresses the vanishing gradient
+problem, where, as input sequences elongate, the influence of initial
+stages becomes harder to capture, causing gradients of early input
+points to approach zero. LSTMs have shown stability and efficacy in
+sequence-to-sequence predictions. This performance in modeling
+long-range dependencies has been validated in various studies
+{[}\texttt{missing}{]}.
+
+However, a limitation of LSTMs is their inability to effectively capture
+two-dimensional structures, an area where Convolutional Neural Networks
+(CNNs) excel. Recognizing this limitation, SHI et al. (2015) proposed a
+Convolutional LSTM (ConvLSTM) architecture, which combines the strengths
+of both LSTM and CNN. The ConvLSTM network has been proven useful for
+spatio-temporal applications such as precipitation nowcasting (SHI et
+al., 2015), flood forecasting (\textbf{moishin2021designing?}), and
+river runoff forecasting (\textbf{ha2021?};
+\textbf{zhu2023spatiotemporal?}).
 
 In this work, we demonstrate that ConvLSTM networks are a reliable
 method for predicting multiple rivers simultaneously, using only
 atmospheric forcing, even in the absence of a fully functional
-hydrological model with a complex parameterization. We use the Baltic
-Sea catchment as an example to illustrate our approach. Although the
-methodology we propose is universally applicable across various
+hydrological model with a complex parameterization. Still, data of a
+suitable HD model is used as reference to train the network. We use the
+Baltic Sea catchment as an example to illustrate our approach. Although
+the methodology we propose is universally applicable across various
 geographic regions, the Baltic Sea represents a challenging region due
 to its unique hydrological characteristics, being nearly decoupled from
 the open ocean (see Figure). As a consequence, the salinity of the
@@ -253,19 +263,27 @@ quality of the river input, that is used for the simulation. This makes
 the accurate modeling of river runoff especially critical for
 simulations pertaining to the Baltic Sea.
 
-In this work we will, we present a ConvLSTM architecture that is able to
-predict daily river runoff for 97 rivers across the Baltic Sea
-catchment. \textbf{\emph{mehr Fokus auf Neues?}}
+The main focus of this work is to present a ConvLSTM architecture that
+is able to predict daily river runoff for 97 rivers across the Baltic
+Sea catchment (Section~\ref{sec-methodology}). To train the network, we
+use data from the E-HYPE HD model {[}\texttt{missing}{]} as reference
+output data and data from the UERRA project (Uncertainties in Ensembles
+of Regional Re-Analyses,
+\href{http://www.uerra.eu/}{http://www.uerra.eu/)},) as atmospheric
+forcing (Section~\ref{sec-technical_details}). The quality of the model
+is evaluated in \textbf{?@sec-sec-evaluation} and subsequently the
+trained ConvLSTM is used in combination with the MOM5 ocean model for
+the Baltic Sea (Neumann et al., 2021)
+(Section~\ref{sec-MOM-application}). The obtained results are further
+discussed in Section~\ref{sec-discussion} and concluded in
+Section~\ref{sec-conclusions}.
 
-\hypertarget{implemented-model-architecture}{%
-\section{Implemented model
-architecture}\label{implemented-model-architecture}}
+\section{Implemented model architecture}\label{sec-methodology}
 
-\hypertarget{sec-main_idea}{%
-\subsection{The main idea}\label{sec-main_idea}}
+\subsection{The main idea}\label{sec-main_idea}
 
-We assume that the runoff at a specific point in time for all \(N_r\)
-considered rivers, collected in the vector
+We assume that the runoff at a specific point in time \(t\) for all
+\(N_r\) considered rivers, collected in the vector
 \(\vec{R}^t \in \mathbb{R}^{N_r}\), can be accurately approximated by a
 functional \(\vec{M}(\{X^t_k[x,y,\tau]\})\) of \(k=1,\ldots N_k\)
 atmospheric fields \(X^t_k[x,y,\tau]\) which are known for the past
@@ -290,50 +308,52 @@ heavily on domain knowledge to tune all parameters to reasonable values.
 
 As an alternative, we propose that this functional can be adequately
 represented by a combination of a convolutional Long-Short Term Memory
-(ConvLSTM) model with a subsequent fully connected neural network. This
-approach eliminates the need for detailed knowledge of the involved
+(ConvLSTM) model with a subsequent fully connected (FC) neural network.
+This approach eliminates the need for detailed knowledge of the involved
 processes and their modeling. Instead, these features can be ``learned''
-by the network in an automated manner. Our proposed network architecture
-is visualized in Figure~\ref{fig-ConvLSTM_FC} and described in detail in
-the following sections. To provide an overview, we will discuss the main
-components of this architecture one-by-one.
+by the network in an automated manner, i.e.~all free parameters are
+optimized such that the network's output reproduces best the HD model
+data with given atmospheric input fields. Our proposed network
+architecture is visualized in Figure~\ref{fig-ConvLSTM_FC} and described
+in detail in the following sections. To provide an overview, we will
+discuss the main components of this architecture one-by-one.
 
 \begin{figure}
 
-{\centering \includegraphics{./ConvLSTM_FC.png}
+\centering{
+
+\includegraphics{./ConvLSTM_FC.png}
 
 }
 
 \caption{\label{fig-ConvLSTM_FC}\textbf{Combined ConvLSTM and FC network
-architecture}. The starting point is the continuous timeseries of input
+architecture}. The starting point is the continuous time series of input
 data \(\{\vec{X}^t\}\), upper white block. From this series, a
 contiguous sequence of \(N_\tau\) elements (yellow block) is used to
 feed a chain of \(N_\tau\) connected ConvLSTM cells (light blue block)
-building the ConvLSTM network (grey block). The input seuqence is mapped
+building the ConvLSTM network (grey block). The input sequence is mapped
 via weighting matrices \(\pmb{\mathcal{M}}^g\) (green blocks) onto gate
 vectors \(\vec{g}^t[\tau]\). The gate vectors are then used to update
 the cell state \(\vec{C}^t[\tau-1]\) and the hidden state
 \(\vec{H}^t[\tau-1]\) of the last ConvLSTM cell to the current values
 \(\vec{C}^t[\tau]\) and \(\vec{H}^t[\tau]\), respectively. The update is
-performed with LSTM core equations collectively described by the mapping
-L, see Equation~\ref{eq-LSTM}. The weighting matrices
+performed with the LSTM core equations collectively described by the
+mapping \(L\), see Equation~\ref{eq-LSTM}. The weighting matrices
 \(\pmb{\mathcal{N}}^g\) (green blocks) control how much of the last
 hidden state enters the updated state. The final output of the ConvLSTM
 \(\vec{H}^t[\tau]\) is then propagated to a FC network, which itself is
-a chain of three FC layers consisiting of weigthing matrices
+a chain of three FC layers consisting of weighting matrices
 \(\pmb{\mathcal{W}}\) and connected via ReLU functions, see
-Section~\ref{sec-FC_layer}. The final result is then the river runoff
+Section~\ref{sec-FC_layer}. The final result is the river runoff
 \(\vec{R}^t\) for all rivers considered at the current time instance
 \(t\) (white block on the lower left). Note that all bias vectors are
-ommitted for the sake of clarity. See text for more information.}
+omitted for the sake of clarity. See text for more information.}
 
-\end{figure}
+\end{figure}%
 
-\hypertarget{convlstm-network}{%
-\subsection{ConvLSTM network}\label{convlstm-network}}
+\subsection{The ConvLSTM network}\label{the-convlstm-network}
 
-\hypertarget{sec-LSTM}{%
-\subsubsection{The LSTM approach}\label{sec-LSTM}}
+\subsubsection{The LSTM approach}\label{sec-LSTM}
 
 Before turning directly to the ConvLSTM the simpler architecture of the
 plain Long-Short Term Memory (LSTM) model is examined which serves as a
@@ -356,7 +376,9 @@ of accuracy (see Figure~\ref{fig-lstm}).
 
 \begin{figure}
 
-{\centering \includegraphics{./LSTM.png}
+\centering{
+
+\includegraphics[width=10.5cm,height=\textheight]{./LSTM.png}
 
 }
 
@@ -364,32 +386,19 @@ of accuracy (see Figure~\ref{fig-lstm}).
 Memory Cell}. See Figure~\ref{fig-ConvLSTM_FC} and text for
 information.}
 
-\end{figure}
+\end{figure}%
 
-This performance in modeling long-range dependencies has been validated
-in various studies (\textbf{XXX?}). The key component of the LSTM's
-innovation is its cell state,
+The key component of the LSTM's innovation is its cell state,
 \(\vec{C}^t[\tau] = (C^t_h[\tau]) \in \mathbb{R}^{N_h}\), which stores
 state information, also referred to as \emph{long-term memory}. This
-state information complements the so-called hidden state
-\(\vec{H}^t[\tau] = (H^t_h[\tau]) \in \mathbb{R}^{N_h}\) vector, which
-is also known from simpler neural network architectures. In case of the
-LSTM, the hidden state vector plays the role of the \emph{short-term
-meory}.
-
-A significant advantage of this architecture is the memory cell's
-ability to retain gradients. This mechanism addresses the vanishing
-gradient problem, where, as input sequences elongate, the influence of
-initial stages becomes harder to capture, causing gradients of early
-input points to approach zero. The LSTM's activation function,
-inherently recurrent, mirrors the identity function with a consistent
-derivative of 1.0, ensuring the gradient remains stable throughout
-backpropagation.
-
+state information complements the so-called hidden state vector
+\(\vec{H}^t[\tau] = (H^t_h[\tau]) \in \mathbb{R}^{N_h}\), which is also
+known from simpler neural network architectures. In case of the LSTM,
+the hidden state vector plays the role of the \emph{short-term memory}.
 The cell state and the hidden state are vectors, where each element is
 associated with one of the \(N_h\) hidden layers, labeled by \(h\),
 which are internal, \emph{artificial} degrees of freedom that enable the
-high adaptibility of neural networks. These two state vectors are
+high adaptability of neural networks. These two state vectors are
 determined through several self-parameterized gates, all in the same
 vector space as \(\vec{C}^t[\tau]\), see Figure~\ref{fig-lstm} for a
 visualization.
@@ -421,7 +430,7 @@ i.e.~indices that appear twice are summed over. The calligraphic symbols
 \(\mathcal{M}^{g}_{hk}, \mathcal{N}^{g}_{hh'}\) and
 \(\mathcal{B}^g_{h}\) are the free parameters of the network that are
 optimized for the given problem during the training, which is at the
-heart of any machine learning approach. The matrix
+heart of the any machine learning approach. The matrix
 \(\pmb{\mathcal{M}}^{g} = (\mathcal{M}^{g}_{hk}) \in \mathbb{R}^{N_h \times N_k}\)
 can be interpreted as a Markovian-like contribution of the current input
 \(\vec{X}^t[\tau]\) to the gates, whereas the
@@ -435,21 +444,21 @@ complete dataset \(\{\vec{X}^t\}\).
 
 Note that this mapping is sometimes extended by a contribution to the
 \(g_h^t[\tau]\) from the past cell state \(\vec{C}^t[\tau-1]\)
-(\textbf{XXX?}). Nevertheless, this mechanism called ``peeping'' is not
-further considered in this work.
+{[}\texttt{missing}{]}. Nevertheless, this mechanism called ``peeping''
+is not further considered in this work.
 
 For the sake of brevity, we can write the mapping more compactly in
 matrix-vector form as
-\begin{equation}\protect\hypertarget{eq-LSTM-gates}{}{
+\begin{equation}\phantomsection\label{eq-LSTM-gates}{
 \begin{aligned}
 \vec{g}^t[\tau] = \pmb{\mathcal{M}}^{g}\vec{X}^t[\tau] + \pmb{\mathcal{N}}^{g}  \vec{H}^t[ \tau-1]+ \vec{\mathcal{B}}^g \,
 \end{aligned}
-}\label{eq-LSTM-gates}\end{equation}
+}\end{equation}
 
 Second, the actual gate vectors are computed by the core equations of
 the LSTM as proposed by (\textbf{hochreiter1997long?}):
 
-\begin{equation}\protect\hypertarget{eq-LSTM}{}{
+\begin{equation}\phantomsection\label{eq-LSTM}{
 \begin{aligned}
 \vec{I}^t[\tau] &= \sigma(\vec{i}^t[\tau]) \\
 \vec{F}^t[\tau] &= \sigma(\vec{f}^t[\tau]) \\
@@ -457,7 +466,7 @@ the LSTM as proposed by (\textbf{hochreiter1997long?}):
 \vec{C}^t[\tau] &= \vec{F}^t[\tau] \circ \vec{C}^t[\tau-1]  + \vec{I}^t[\tau] \circ \tanh(\vec{c}^t[\tau]) \\
 \vec{H}^t[\tau]  &= \vec{O}^t[\tau] \circ \tanh(\vec{C}^t[\tau]) \ ,
 \end{aligned}
-}\label{eq-LSTM}\end{equation}
+}\end{equation}
 
 where \(\sigma\) denotes the logistic sigmoid function, \(\tanh\) is the
 hyperbolic tangent and the \(\circ\) stands for the Hadamard product
@@ -474,9 +483,9 @@ sequence.
 The full action of the LSTM network up to the end of the sequence can be
 written as a nested function call
 
-\begin{equation}\protect\hypertarget{eq-L_nested}{}{
+\begin{equation}\phantomsection\label{eq-L_nested}{
 \left(\vec{H}^t[N_\tau], \vec{C}^t[N_\tau] \right) = L \left( \vec{X}^t[N_\tau], L \left( \vec{X}^t[N_\tau-1], \ldots L \left( \vec{X}^t[1], (\vec{H}^t[0], \vec{C}^t[0]) \right) \ldots \right) \right) \ ,
-}\label{eq-L_nested}\end{equation}
+}\end{equation}
 
 where
 \(L\left(\vec{X}^t[\tau], \left(\vec{H}^t[\tau-1], \vec{C}^t[\tau-1] \right) \right)\)
@@ -487,18 +496,17 @@ memory longer than \(N_\tau\) time steps.
 
 The final output of the ConvLSTM chain, \(\vec{H}^t[N_\tau]\) and
 \(\vec{C}^t[N_\tau]\), encode information on the full input sequence
-ending at time \(t\). This information has to be decoded to obtain
-useful information via an appropriate subsequent network, as it is
-described in the Section~\ref{sec-FC_layer}.
+ending at time \(t\). This information has to be decoded via an
+appropriate subsequent network, as it is described in the
+Section~\ref{sec-FC_layer}.
 
-\hypertarget{combining-lstm-with-spatial-convolution}{%
-\subsubsection{Combining LSTM with spatial
-convolution}\label{combining-lstm-with-spatial-convolution}}
+\subsubsection{Combining the LSTM with spatial
+convolution}\label{combining-the-lstm-with-spatial-convolution}
 
 Although the plain LSTM has high performance in handling temporal
 sequences of point-like quantities it is not designed to recognize
-spatial features in sequences of, e.g., two-dimensional maps as
-atmospheric-ocean interface fields. To address this limitation we employ
+spatial features in sequences of two-dimensional maps as
+atmosphere-ocean interface fields. To address this limitation we employ
 a ConvLSTM architecture as described in the following.
 
 In this kind of network the elements of the input sequence are given as
@@ -543,16 +551,15 @@ symbolically the same as presented in Equation~\ref{eq-LSTM} but with
 all appearing quantities now meaning vector fields instead of simple
 vectors.
 
-In summary, the ConvLSTM excels at processing tasks that demand a
+In summary, the ConvLSTM is designed for processing tasks that demand a
 combined understanding of spatial patterns and temporal sequences in
 data. It merges the image-processing capabilities of Convolutional
 Neural Networks (CNNs) with the time-series modeling of Long Short-Term
 Memory (LSTM) networks.
 
-\hypertarget{sec-FC_layer}{%
-\subsection{Fully connected layer}\label{sec-FC_layer}}
+\subsection{Fully connected layer}\label{sec-FC_layer}
 
-As stated in Sec. Section~\ref{sec-LSTM}, the final output
+As stated in Section~\ref{sec-LSTM}, the final output
 \(\vec{H}^t[N_\tau]\) and \(\vec{C}^t[N_\tau]\) of the ConvLSTM encode
 information on the full input sequence. In order to contract this
 information to obtain the runoff vector \(\vec{R}^t\) representing the
@@ -563,9 +570,9 @@ network.
 In particular, the dimensionality of the vector field
 \(\vec{H}^t[N_\tau]\) is sequentially reduced by three nested FC layers,
 each connected to the other by the Rectified Linear Unit (ReLU), see
-Figure~\ref{fig-ConvLSTM_FC}. Integrating over artificial degrees of
-freedom in a step-wise fashion has turned out to be benificial
-{[}(\textbf{XXX?}){]}.
+Figure~\ref{fig-ConvLSTM_FC}. Integrating out artificial degrees of
+freedom in a step-wise fashion has turned out to be beneficial
+{[}\texttt{missing}{]}.
 
 Spelled out in mathematics, the runoff of the \(r\)-th river is then
 obtained via (using Einstein's convention)
@@ -573,7 +580,7 @@ obtained via (using Einstein's convention)
 \[
 \begin{aligned}
 R_r^t = \mathcal{W}^{3}_{rb}\mathrm{ReLU}\left(\mathcal{W}^{2}_{ba}\mathrm{ReLU}\left(\mathcal{W}^{1}_{ah} [x,y] H^t_h[x,y, N_\tau] + \mathcal{B}^1_a\right) + \mathcal{B}^2_b \right) + \mathcal{B}^3_r \ ,
-\end{aligned}
+\end{aligned} 
 \]
 
 where \(a=1,\ldots N_a\), \(b=1,\ldots N_b\) and the hyper parameters
@@ -583,16 +590,17 @@ aforementioned step-by-step reduction of dimensionality. The weights
 \(\mathcal{W}\) and biases \(\mathcal{B}\) stand for parameters that are
 optimized during the training of the network.
 
-In matrix-vector notation this can be compactified to \[
+In matrix-vector notation this can be compressed to
+\begin{equation}\phantomsection\label{eq-FC_layer}{
 \begin{aligned}
 \vec{R}^t = \pmb{\mathcal{W}}^{3}\mathrm{ReLU}\left(\pmb{\mathcal{W}}^{2}\mathrm{ReLU}\left(\pmb{\mathcal{W}}^{1} \vec{H}^t[N_\tau] + \vec{\mathcal{B}}^1\right) + \vec{\mathcal{B}}^2 \right) + \vec{\mathcal{B}}^3 \ .
 \end{aligned}
-\]
+}\end{equation}
 
-Combining the last equation with Equation~\ref{eq-L_nested} provides
-finally an explicit formula for the initial assumption of modelling the
-runoff for time \(t\) as a functional of a sequence of atmospheric
-fields, i.e.
+Combining Equation~\ref{eq-FC_layer} with Equation~\ref{eq-L_nested}
+provides finally an explicit formula for the initial assumption of
+modelling the runoff for time \(t\) as a functional of a sequence of
+atmospheric fields, i.e.
 
 \[
 \begin{aligned}
@@ -606,12 +614,10 @@ In Section~\ref{sec-technical_details}, we present the employed model
 and data setup as well as the choice for all mentioned hyper parameters
 that lead to an adequate model performance after training.
 
-\hypertarget{sec-technical_details}{%
-\section{Technical details}\label{sec-technical_details}}
+\section{Technical details}\label{sec-technical_details}
 
-\hypertarget{runoff-data-used-for-training}{%
 \subsection{Runoff data used for
-training}\label{runoff-data-used-for-training}}
+training}\label{runoff-data-used-for-training}
 
 The runoff data covering the period 1979 to 2011 is based on an E-HYPE
 hindcast simulation that was forced by a regional downscaling of
@@ -623,8 +629,7 @@ have therefore been ignored. The quality of the runoff was extensively
 evaluated. For more information see (\textbf{gröger2022?}) and
 references therein.
 
-\hypertarget{atmospheric-forcing}{%
-\subsection{Atmospheric Forcing}\label{atmospheric-forcing}}
+\subsection{Atmospheric Forcing}\label{atmospheric-forcing}
 
 The UERRA-HARMONIE regional reanalysis dataset was developed as part of
 the FP7 UERRA project (Uncertainties in Ensembles of Regional
@@ -642,8 +647,7 @@ produced during the UERRA project and later transitioned to the
 Copernicus Climate Change Service (C3S,
 \url{https://climate.copernicus.eu/copernicus-regionalreanalysis-europe).}
 
-\hypertarget{ocean-model}{%
-\subsection{Ocean Model}\label{ocean-model}}
+\subsection{Ocean Model}\label{ocean-model}
 
 To simulate the Baltic Sea, we use a coupled 3-dimensional ocean model
 Baltic Sea, called the Modular Ocean Model (MOM). This model uses a
@@ -655,74 +659,83 @@ Baltic Sea to the North Sea. The maximum depth was set at 264 meters. A
 more detailed description of the setup can be found in
 (\textbf{gröger2022?}).
 
-\hypertarget{neural-network-hyper-parameters}{%
 \subsection{Neural network hyper
-parameters}\label{neural-network-hyper-parameters}}
+parameters}\label{neural-network-hyper-parameters}
+
+During training, the following set of hyper parameters has turned out to
+yield sufficient quality of the results for the present study:
+
+\begin{longtable}[]{@{}ll@{}}
+\caption{Hyperparameters}\label{tbl-letters}\tabularnewline
+\toprule\noalign{}
+Parameter name & Parameter size \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Parameter name & Parameter size \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Channel size & 4 \\
+Num. hidden layer & 9 \\
+Num. timesteps & 30 \\
+Conv. kernel size & (7,7) \\
+Num. ConvLSTM layers & 1 \\
+Batch size & 50 \\
+Learning Rate & 1e-3 with CosineAnnealing \\
+\end{longtable}
+
+As input the model receives \(N_{\tau}\) = 30 days of atmospheric
+surface fields temperature, precipitation, specific humidity and wind
+speed, with a daily resolution to predict the river runoff \(\vec{R}\)
+(Figure~\ref{fig-baltNet}).
 
 \begin{figure}
 
-{\centering \includegraphics{ConvLSTM.png}
+\centering{
+
+\includegraphics{ConvLSTM.png}
 
 }
 
 \caption{\label{fig-baltNet}Schematic structure of the ConvLSTM
 implementation for river runoff forecasting.}
 
-\end{figure}
+\end{figure}%
 
-For the computation we use the following set of hyper parameters:
+The choice of atmospheric fields was based on the assumption that the
+runoff should be mainly given by the net precipitation (precipitation
+minus evaporation). The evaporation flux is often calculated as a
+function of wind speed, the air's humidity, the air's density and the
+involved turbulent exchange coefficients (Karsten et al., 2024), where
+the latter two are influenced by the air temperature.
 
-\hypertarget{tbl-letters}{}
-\begin{longtable}[]{@{}ll@{}}
-\caption{\label{tbl-letters}Hyperparameters}\tabularnewline
-\toprule()
-Parameter name & Parameter size \\
-\midrule()
-\endfirsthead
-\toprule()
-Parameter name & Parameter size \\
-\midrule()
-\endhead
-Channel size & 4 \\
-Num. hidden layer & 9 \\
-Num. timesteps & 30 \\
-Conv. Kernelsize & (7,7) \\
-Num. ConvLSTM layers & 1 \\
-Batch size & 50 \\
-Learning Rate & 1e-3 with CosineAnnealing \\
-\bottomrule()
-\end{longtable}
+\section{Results}\label{results}
 
-As input the model receives \(N_{\tau}\) = 30 days of atmospheric
-surface fields temperature \(T\), precipitation \(P\), specific humidity
-\(Q\) and wind speed \(W\), with a daily resolution to predict the river
-runoff \(\vec{R}\). The choice of atmospheric fields was based on the
-implemented river runoff calculation in the atmospheric model COSMO-CLM
-which uses these atmospheric fields to calculate an river runoff
-estimate.
-
-\hypertarget{results}{%
-\section{Results}\label{results}}
+\subsection{ConvLSTM model evaluation}\label{sec-evaluation}
 
 The model was trained with daily data for the period 1979 to 2011, as
 this period represents the only period of E-HYPE without further bias
 correction applied to the runoff to match observations. The data was
 divided into randomly chosen splits of 80\(\%\) training data, 10\(\%\)
 validation data to evaluate the performance of the model during
-training, and 10\(\%\) training data which is finally used to evaluate
-the performance of the model after training. The model was trained for
-400 epochs and the model weights with the lowest mean squared error
-during training have been stored.
+training, and 10\(\%\) test data which is finally used to evaluate the
+performance of the model after training. The model was trained for 400
+epochs and the model weights with the lowest mean squared error during
+training have been stored.
 
-The accuracy of the model is displayed in Figure
-\textbf{?@fig-statistical-evaluationNN}. As mention above for
-evaluation, the test dataset was utilized. The left panel panel (Figure
-\textbf{?@fig-statistical-evaluationNN} a) illustrates the relative
-prediction error in relation to the original E-HYPE data, indicating
-that, on daily timescales, the model can predict river runoff with an
-accuracy of \(\pm\) 5\(\%\). The overall correlation is 0.997 with the
-resulting error metrics yielding a RMSE of 323.99 \(m^3\)/s and MAE of
-249.51 \(m^3\)/s. While the model's performance is satisfactory, the
+The accuracy of the model is displayed in
+Figure~\ref{fig-statistical-evaluationNN}. As mention above, for this
+evaluation, the model's output is compared to the test data, which,
+importantly, the model has not seen yet during the training.
+\texttt{Which\ river\ is\ shown\ here?} The left panel a) illustrates
+the relative prediction error in relation to the original E-HYPE data,
+indicating that, on daily timescales, the model can predict river runoff
+with an accuracy of \(\pm\) 5\(\%\). The overall correlation is 0.997
+with the resulting error metrics yielding a root mean square error
+(RMSE) of 323.99 \(m^3\)/s and mean absolute error (MAE) of 249.51
+\(m^3\)/s. While the model's performance is satisfactory, the
 discrepancies between the actual values and the predictions could partly
 be attributed to the use of a different atmospheric dataset than the one
 originally used to drive the E-HYPE model. However, by applying a
@@ -733,62 +746,110 @@ residuals follows a Gaussian shape, suggesting that our model does not
 exhibit bias by systematically over or underestimating river runoff
 values.
 
-\includegraphics{../src/figures/paper_error_metrics.png}
+\begin{figure}
 
-In the following we will now address the overall performance of the
-total river runoff while also zooming in on the four largest rivers
-entering the Baltic Sea. @fig-PerformanceNeuralNetworkRunoff shows the
-predicted and the original river runoff using the test dataset. The
-predicted total river runoff for the Baltic Sea is closely matching the
-original data (@fig-PerformanceNeuralNetworkRunoff a). Zooming in on the
-largest individual rivers (@fig-PerformanceNeuralNetworkRunoff b-e) it
-can be seen that that also the prediction of the individual rivers is
-close to the original data.
+\centering{
 
-\includegraphics{../src/figures/paper_total_river_runoff.png}
+\captionsetup{labelsep=none}\includegraphics{../src/figures/paper_error_metrics.png}
 
-Lastly, we evaluated the performance of the runoff model by
-incorporating the predicted river runoff as runoff forcing into the
-ocean model MOM5. This provides a robust validation of the runoff model
-against more complex real world conditions. This allows us to ensure
-that the predictions accurately reflect the impact of the river
-discharge on the ocean dynamics, validating the temporal and spatial
-variability of the the river discharge. \textbf{?@fig-by15} shows the
-salinity comparison between the original E-HYPE river runoff and the
-predicted river runoff at BY15 - a central stations in the Baltic Sea.
-It can be seen that the model simulation using the predicted river
-runoff by the ConvLSTM is closely mirroring the control simulation. The
-upper panel (\textbf{?@fig-by15} a) shows the surface salinity,
+}
+
+\caption{\label{fig-statistical-evaluationNN}}
+
+\end{figure}%
+
+\texttt{The\ time\ axis\ should\ be\ improved\ here\ and\ in\ all\ other\ time\ series\ plots.}
+
+In the following the model's performance to reproduce the total river
+runoff as well as the inflow of the four largest rivers into the Baltic
+Sea is addressed. Figure~\ref{fig-PerformanceNeuralNetworkRunoff} shows
+the predicted and the original river runoff in comparison to the test
+dataset. The predicted total river runoff for the Baltic Sea is closely
+matching the original data, see panel a) therin. Zooming in on the
+largest individual rivers (panels b-e), it can be seen that also the
+prediction of the individual rivers is close to the original data.
+
+\begin{figure}
+
+\centering{
+
+\captionsetup{labelsep=none}\includegraphics{../src/figures/paper_total_river_runoff.png}
+
+}
+
+\caption{\label{fig-PerformanceNeuralNetworkRunoff}}
+
+\end{figure}%
+
+\subsection{Application of the ConvLSTM in combination with an ocean
+model}\label{sec-MOM-application}
+
+Lastly, we evaluate the performance of the ConvLSTM by incorporating the
+predicted river runoff as hydrological forcing into the ocean model
+MOM5. This provides a robust validation of the runoff model against more
+complex real world conditions and is thereby ensuring that the
+predictions accurately reflect the impact of the river discharge on the
+ocean dynamics. This in turn validates that the temporal and spatial
+variability of river runoff is well captured by ConvLSTM and that the
+residuals shown in Figure~\ref{fig-statistical-evaluationNN} are indeed
+insignificant when it comes to realistic applications.
+
+Figure~\ref{fig-by15} shows the salinity comparison between the original
+E-HYPE river runoff and the predicted river runoff at BY15 - a central
+station in the Baltic Sea, east of the Gotland island. It can be seen
+that the model simulation using the predicted river runoff by the
+ConvLSTM is closely mirroring the control simulation, that is forced
+with the E-HYPE runoff. The upper panel a) shows the surface salinity,
 representing the high-frequency variations in the salinity, which is
-heavily affected by river runoff. The lower panel (\textbf{?@fig-by15}
-b) shows the bottom salinity which can be viewed as a low-pass filter in
-the Baltic Sea, which is also closely mirrored by the ConvLSTM
-predictions.
+heavily affected by river runoff. The lower panel b) shows the bottom
+salinity which in turn is low-frequency feature in the Baltic Sea that
+is also well reproduced with the ConvLSTM predictions.
 
-\includegraphics{../src/figures/by15_model.png}
+\begin{figure}
+
+\centering{
+
+\captionsetup{labelsep=none}\includegraphics{../src/figures/by15_model.png}
+
+}
+
+\caption{\label{fig-by15}}
+
+\end{figure}%
 
 The final evaluation of the ConvLSTM model concentrates on the spatial
-accuracy of river runoff predictions. Figure xxx a) shows the vertically
-averaged salinity for the period 1981 to 2011 in the reference
-simulation. It highlights the strong horizontal gradients and complex
-topographic features in the Baltic Sea, as evidenced by salinity
-variations in deeper waters, captured by the vertical integration.
-Figure 4b compares these results by showing the percentage difference in
-vertically averaged salinity between the ConvLSTM simulation and the
-reference simulation. Overall, the differences remain below 1\(\%\),
-except near a river mouth in the Gulf of Riga (22-24°E, 56.5-58.5°N for
-orientation), where the difference is approximately 1\(\%\).
+accuracy of river runoff predictions as visualized in
+Figure~\ref{fig-evaluation_MOM}. Panel a) therein exhibits the
+vertically averaged salinity for the period 1981 to 2011 in the
+reference simulation. It highlights the strong horizontal gradients and
+complex topographic features in the Baltic Sea, as evidenced by salinity
+variations in deeper waters, captured by the vertical integration. In
+panel b), these reference results are compared to the ConvLSTM
+simulation by showing the percentage difference in vertically averaged
+salinity. Overall, the differences remain below 1\(\%\), except in the
+Gulf of Riga (22-24°E, 56.5-58.5°N for orientation), where the runoff is
+dominated by the Daugava river. Here the difference is approximately
+1\(\%\).
 
-\includegraphics{../src/figures/evaluation_MOM.png}
+\begin{figure}
 
-\hypertarget{discussion}{%
-\section{Discussion}\label{discussion}}
+\centering{
+
+\captionsetup{labelsep=none}\includegraphics{../src/figures/evaluation_MOM.png}
+
+}
+
+\caption{\label{fig-evaluation_MOM}}
+
+\end{figure}%
+
+\section{Discussion}\label{sec-discussion}
 
 With the increasing demand of decision makers for regional climate
 projections, that allow to quantify regional climate change impacts, the
 availability of precise hydrological forecasting becomes invaluable. The
 quality of a projection for a coastal sea such as the Baltic Sea is too
-large parts based on the quality of the hyrdological conditions. In this
+large parts based on the quality of the hydrological conditions. In this
 work we analyze the implementation of a ConvLSTM networks for predicting
 river runoff, highlighting its potential to enhance river runoff
 forecasting across different coastal seas. Given the unique hydrological
@@ -798,81 +859,98 @@ surrounding rivers, the region presents a critical case for the
 application of sophisticated forecasting models.
 
 The transition from traditional hydrological models to machine learning
-approaches, such as the ConvLSTM model, offers significant advantages.
-The ConvLSTM can be seamlessly integrated into regional climate models,
-allowing for the real-time computation of river runoff while performing
-climate projections. While the initial training of the model requires
-substantial computational resources, it remains less intensive than
-running comprehensive hydrological models. Furthermore, once trained,
-the ConvLSTM model is computationally efficient during inference,
-ensuring enhanced forecasting capabilities without significantly
-increasing computational demands.
+approaches, such as the ConvLSTM model, offers significant advantages
+with respect to the following aspects. The ConvLSTM can be seamlessly
+integrated into regional climate models, allowing for the real-time
+computation of river runoff while performing climate projections. While
+the initial training of the model requires substantial computational
+resources, it remains less intensive than running comprehensive
+hydrological models. Furthermore, once trained, the ConvLSTM model is
+computationally efficient during inference, ensuring enhanced
+forecasting capabilities without significantly increasing computational
+demands.
 
-While the ConvLSTM represents an advancement for the climate community,
-given that running and tuning traditional hydrological models demands
-extensive expertise, models like E-HYPE maintain an essential role. They
-provide a comprehensive dataset that helps to train our ConvLSTM model
-effectively. This robust training enables the machine learning models to
-achieve highly accurate predictive weights. Thus, rather than rendering
-traditional methods obsolete, the integration of machine learning models
-builds upon and enhances the foundational data provided by them.
+However, while the ConvLSTM represents an advancement for the climate
+community, given that running and tuning traditional hydrological models
+demands extensive expertise, models like E-HYPE maintain an essential
+role. They provide a comprehensive dataset that enables to train our
+ConvLSTM model effectively. This robust training helps the machine
+learning models to achieve highly accurate predictive weights. Thus,
+rather than rendering traditional methods obsolete, the integration of
+machine learning models builds upon and enhances the foundational data
+provided by them.
 
-The robust performance of the ConvLSTM model in simulating river runoff
-and its possible effective integration into regional climate models pave
-the way for a multitude of new storyline simulations. Hence, we can now
-explore various ``what-if'' scenarios more reliably, under the
-assumption that the model weights attained during training are robust.
+\section{Conclusions}\label{sec-conclusions}
 
 In summary, we showed that the ConvLSTM model demonstrated robust
 performance in forecasting river runoff across 97 rivers entering the
 Baltic Sea. Trained on data from 1979 to 2011, the model achieved an
-impressive daily prediction accuracy of ±5\(\%\). This capability to
-generate accurate and detailed simulations enables to examine the
-potential impacts of different climate scenarios. Such precision in
-forecasting and scenario testing is crucial for crafting effective water
-resource management strategies and adapting to the changing climate.
+impressive daily prediction accuracy of \(\pm 5 \%\). Importantly, this
+accuracy is achieved without any expert's domain knowledge on
+hydrological modelling. This capability to generate accurate and
+detailed simulations enables to examine the potential impacts of
+different climate scenarios. Such precision in forecasting and scenario
+testing is crucial for crafting effective water resource management
+strategies and adapting to the changing climate.
 
-Ultimately, the integration of ConvLSTM into regional climate models
-represents a significant step forward in our ability to understand and
-predict the complex dynamics of river systems and their impact on
+The robust performance of the ConvLSTM model in simulating river runoff
+and its possible effective integration into coupled regional climate
+models, as for example in the IOW ESM (Karsten et al., 2024), pave the
+way for a multitude of new storyline simulations. Hence, we can now
+explore various ``what-if'' scenarios more reliably, under the
+assumption that the model weights attained during training are robust.
+This represents a significant step forward in our ability to understand
+and predict the complex dynamics of river systems and their impact on
 regional climate systems.
 
-\hypertarget{acknowledgments}{%
-\section{Acknowledgments}\label{acknowledgments}}
+\section{Acknowledgments}\label{acknowledgments}
 
 The research presented in this study is part of the Baltic Earth program
 (Earth System Science for the Baltic Sea region, see
 \href{https://www.baltic.earth/}{https://www.baltic.earth}.
 
-\hypertarget{references}{%
-\section*{References}\label{references}}
+\section*{References}\label{references}
 \addcontentsline{toc}{section}{References}
 
-\hypertarget{refs}{}
+\phantomsection\label{refs}
 \begin{CSLReferences}{1}{0}
 \vspace{1em}
 
-\leavevmode\vadjust pre{\hypertarget{ref-fangExaminingApplicabilityDifferent2019}{}}%
+\bibitem[\citeproctext]{ref-fangExaminingApplicabilityDifferent2019}
 Fang, W., Huang, S., Ren, K., Huang, Q., Huang, G., Cheng, G., \& Li, K.
 (2019). Examining the applicability of different sampling techniques in
 the development of decomposition-based streamflow forecasting models.
 \emph{Journal of Hydrology}, \emph{568}, 534--550.
 \url{https://doi.org/10.1016/j.jhydrol.2018.11.020}
 
-\leavevmode\vadjust pre{\hypertarget{ref-hagemannHighResolutionDischarge2020}{}}%
+\bibitem[\citeproctext]{ref-hagemannHighResolutionDischarge2020}
 Hagemann, S., Stacke, T., \& Ho-Hagemann, H. T. M. (2020). High
 {Resolution Discharge Simulations Over Europe} and the {Baltic Sea
 Catchment}. \emph{Frontiers in Earth Science}, \emph{8}.
 \url{https://doi.org/10.3389/feart.2020.00012}
 
-\leavevmode\vadjust pre{\hypertarget{ref-shiConvolutionalLSTMNetwork2015}{}}%
+\bibitem[\citeproctext]{ref-karsten2024}
+Karsten, S., Radtke, H., Gröger, M., Ho-Hagemann, H. T. M., Mashayekh,
+H., Neumann, T., \& Meier, H. E. M. (2024). Flux coupling approach on an
+exchange grid for the IOW earth system model (version 1.04.00) of the
+baltic sea region. \emph{Geoscientific Model Development}, \emph{17}(4),
+1689--1708. \url{https://doi.org/10.5194/gmd-17-1689-2024}
+
+\bibitem[\citeproctext]{ref-neumann2021}
+Neumann, T., Koponen, S., Attila, J., Brockmann, C., Kallio, K.,
+Kervinen, M., et al. (2021). Optical model for the baltic sea with an
+explicit CDOM state variable: A case study with model ERGOM (version
+1.2). \emph{Geoscientific Model Development}, \emph{14}(8), 5049--5062.
+\url{https://doi.org/10.5194/gmd-14-5049-2021}
+
+\bibitem[\citeproctext]{ref-shiConvolutionalLSTMNetwork2015}
 SHI, X., Chen, Z., Wang, H., Yeung, D.-Y., Wong, W., \& WOO, W. (2015).
 Convolutional {LSTM Network}: {A Machine Learning Approach} for
 {Precipitation Nowcasting}. In \emph{Advances in {Neural Information
 Processing Systems}} (Vol. 28). Curran Associates, Inc. Retrieved from
 \url{https://proceedings.neurips.cc/paper/2015/hash/07563a3fe3bbe7e3ba84431ad9d055af-Abstract.html}
 
-\leavevmode\vadjust pre{\hypertarget{ref-tanAdaptiveMiddleLongterm2018}{}}%
+\bibitem[\citeproctext]{ref-tanAdaptiveMiddleLongterm2018}
 Tan, Q.-F., Lei, X.-H., Wang, X., Wang, H., Wen, X., Ji, Y., \& Kang,
 A.-Q. (2018). An adaptive middle and long-term runoff forecast model
 using {EEMD-ANN} hybrid approach. \emph{Journal of Hydrology},
